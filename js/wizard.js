@@ -299,8 +299,8 @@ APP.Wizard = {
         const holidays = APP.Utils.normalizeHolidayArray(dataSource[ds]?.holidays);
         return holidays.some((holiday) => {
             if (holiday.type === 'nat') return true;
-            if (resolvedRole === 'mom' && holiday.type === 'm_loc') return true;
-            if (resolvedRole === 'dad' && holiday.type === 'f_loc') return true;
+            if (resolvedRole === 'mom' && (holiday.type === 'm_loc' || holiday.type === 'both_loc')) return true;
+            if (resolvedRole === 'dad' && (holiday.type === 'f_loc' || holiday.type === 'both_loc')) return true;
             if (parentObj.isTeacher && holiday.type === 'school') return true;
             return false;
         });

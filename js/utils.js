@@ -9,7 +9,8 @@ APP.Utils = {
         nat: 0,
         m_loc: 1,
         f_loc: 2,
-        school: 3
+        both_loc: 3,
+        school: 4
     },
 
     formatDate(date) {
@@ -42,6 +43,7 @@ APP.Utils = {
             nat: 'Nacional / Autonomico',
             m_loc: 'Local Madre',
             f_loc: 'Local Padre',
+            both_loc: 'Local Madre/Padre',
             school: 'Vacaciones escolares'
         };
         return labels[type] || 'Festivo';
@@ -52,6 +54,7 @@ APP.Utils = {
             nat: 'Festivo nacional/autonomico',
             m_loc: 'Festivo local madre',
             f_loc: 'Festivo local padre',
+            both_loc: 'Festivo local madre/padre',
             school: 'Vacaciones escolares'
         };
         return names[type] || 'Festivo';
@@ -129,8 +132,8 @@ APP.Utils = {
         const holidays = this.normalizeHolidayArray(APP.State.data[ds]?.holidays);
         return holidays.some((holiday) => {
             if (holiday.type === 'nat') return true;
-            if (role === 'mom' && holiday.type === 'm_loc') return true;
-            if (role === 'dad' && holiday.type === 'f_loc') return true;
+            if (role === 'mom' && (holiday.type === 'm_loc' || holiday.type === 'both_loc')) return true;
+            if (role === 'dad' && (holiday.type === 'f_loc' || holiday.type === 'both_loc')) return true;
             return false;
         });
     },

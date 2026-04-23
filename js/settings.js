@@ -131,6 +131,17 @@ APP.Settings = {
         return this.holidaySort.direction === 'asc' ? '&#8593;' : '&#8595;';
     },
 
+    getTypeBadgeClass(type) {
+        const badges = {
+            nat: 'bg-red-50 text-red-700 border-red-200',
+            m_loc: 'bg-purple-50 text-purple-700 border-purple-200',
+            f_loc: 'bg-blue-50 text-blue-700 border-blue-200',
+            both_loc: 'bg-indigo-50 text-indigo-700 border-indigo-200',
+            school: 'bg-amber-50 text-amber-700 border-amber-200'
+        };
+        return badges[type] || 'bg-slate-50 text-slate-700 border-slate-200';
+    },
+
     toggleHolidaySort(key) {
         if (this.holidaySort.key === key) {
             this.holidaySort.direction = this.holidaySort.direction === 'asc' ? 'desc' : 'asc';
@@ -195,9 +206,15 @@ APP.Settings = {
             <tr class="border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
                 <td class="py-3 text-[10px] font-bold text-indigo-600">${ds}</td>
                 <td class="py-3 text-[10px] text-slate-700">${holiday.name || 'Festivo'}</td>
-                <td class="py-3 text-[10px] text-slate-500">${APP.Utils.getHolidayLabel(holiday.type)}</td>
+                <td class="py-3 text-[10px] text-slate-500">
+                    <span class="inline-flex items-center rounded-full border px-2 py-1 text-[9px] font-bold uppercase ${this.getTypeBadgeClass(holiday.type)}">
+                        ${APP.Utils.getHolidayLabel(holiday.type)}
+                    </span>
+                </td>
                 <td class="py-3 text-right">
-                    <button onclick="APP.HolidayManager.open('${ds}', '${holiday.type}')" class="p-1.5 text-slate-400 hover:text-indigo-600">Editar</button>
+                    <button onclick="APP.HolidayManager.open('${ds}', '${holiday.type}')" class="p-1.5 text-slate-400 hover:text-indigo-600" title="Editar ${APP.Utils.getHolidayLabel(holiday.type)} del dia ${ds}">
+                        Editar ${APP.Utils.getHolidayLabel(holiday.type)}
+                    </button>
                     <button onclick="APP.Settings.removeHoliday('${ds}', '${holiday.type}')" class="p-1.5 text-slate-400 hover:text-red-600">Borrar</button>
                 </td>
             </tr>

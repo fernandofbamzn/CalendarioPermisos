@@ -200,16 +200,18 @@ APP.UI = {
         }
 
         const showHolidays = !mandatoryEnd || new Date(ds) >= mandatoryEnd;
+        const hasCombinedLocalHoliday = showHolidays && holidays.some((holiday) => holiday.type === 'both_loc');
         const hasMomLocalHoliday = showHolidays && holidays.some((holiday) => holiday.type === 'm_loc');
         const hasDadLocalHoliday = showHolidays && holidays.some((holiday) => holiday.type === 'f_loc');
         const holidayType = showHolidays ? APP.Utils.getHolidayPrimaryType(holidays) : null;
 
-        if (hasMomLocalHoliday && hasDadLocalHoliday) {
+        if (hasCombinedLocalHoliday || (hasMomLocalHoliday && hasDadLocalHoliday)) {
             el.classList.add('h-local-split', 'ring-1', 'ring-indigo-200');
         } else {
             if (holidayType === 'nat') el.classList.add('bg-red-100', 'text-red-700', 'ring-1', 'ring-red-200');
             if (holidayType === 'm_loc') el.classList.add('bg-purple-100', 'text-purple-700', 'ring-1', 'ring-purple-200');
             if (holidayType === 'f_loc') el.classList.add('bg-blue-100', 'text-blue-700', 'ring-1', 'ring-blue-200');
+            if (holidayType === 'both_loc') el.classList.add('h-local-split', 'ring-1', 'ring-indigo-200');
             if (holidayType === 'school') el.classList.add('bg-amber-100', 'text-amber-700', 'ring-1', 'ring-amber-200');
         }
 
