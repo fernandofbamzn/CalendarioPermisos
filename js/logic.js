@@ -32,7 +32,8 @@ APP.Logic = {
             national,
             local,
             school,
-            isHoliday: national || local || school
+            isLegalHoliday: national || local,
+            isSchoolBreak: school
         };
     },
 
@@ -71,14 +72,18 @@ APP.Logic = {
             const ds = APP.Utils.formatDate(iter);
             const isWeekend = APP.Utils.isWeekend(iter);
             const holidayImpact = this.getHolidayImpact(ds, role, dataSource);
-            const isHoliday = holidayImpact.isHoliday;
+            const isLegalHoliday = holidayImpact.isLegalHoliday;
 
-            let treatAsWorkday = !isHoliday;
+            if (holidayImpact.isSchoolBreak) {
+                breakdown.counts.school++;
+            }
+
+            let treatAsWorkday = !isLegalHoliday;
             if (parent.weekendsAsHolidays && isWeekend) {
                 treatAsWorkday = false;
             } else if (isWeekend) {
                 treatAsWorkday = true;
-            } else if (isHoliday) {
+            } else if (isLegalHoliday) {
                 treatAsWorkday = false;
             }
 
@@ -90,7 +95,7 @@ APP.Logic = {
 
                 let reason = 'Dia laborable incluido';
                 if (isWeekend && !parent.weekendsAsHolidays) {
-                    reason = holidayImpact.isHoliday
+                    reason = holidayImpact.isLegalHoliday
                         ? 'Fin de semana incluido aunque coincida con festivo'
                         : 'Fin de semana incluido por configuracion';
                 }
@@ -112,14 +117,11 @@ APP.Logic = {
                     breakdown.counts.local++;
                     reasons.push('Festivo local del progenitor');
                 }
-                if (holidayImpact.school) {
-                    breakdown.counts.school++;
-                    reasons.push('Vacaciones escolares');
-                }
 
                 breakdown.excludedDates.push({
                     ds,
-                    reasons
+                    reasons,
+                    schoolBreak: holidayImpact.isSchoolBreak
                 });
             }
 

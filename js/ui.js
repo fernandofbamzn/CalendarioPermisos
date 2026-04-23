@@ -254,7 +254,7 @@ APP.UI = {
         const excludedRows = res.breakdown.excludedDates.map((item) => `
             <div class="flex justify-between gap-4 py-2 border-b border-slate-100 last:border-b-0">
                 <span class="font-medium text-slate-700">${APP.Utils.formatDisplay(item.ds)}</span>
-                <span class="text-slate-500 text-right">${item.reasons.join(', ') || 'Excluido'}</span>
+                <span class="text-slate-500 text-right">${item.reasons.join(', ') || 'Excluido'}${item.schoolBreak ? ' · Con vacaciones escolares (informativo)' : ''}</span>
             </div>
         `).join('');
 
@@ -321,7 +321,7 @@ APP.UI = {
                             <p class="text-2xl font-black text-purple-900 mt-2">${res.breakdown.counts.local}</p>
                         </div>
                         <div class="p-4 bg-amber-50 rounded-2xl border border-amber-100">
-                            <p class="text-[10px] font-bold text-amber-500 uppercase">Vacaciones escolares</p>
+                            <p class="text-[10px] font-bold text-amber-500 uppercase">Vacaciones escolares (informativo)</p>
                             <p class="text-2xl font-black text-amber-900 mt-2">${res.breakdown.counts.school}</p>
                         </div>
                     </div>
@@ -349,7 +349,7 @@ APP.UI = {
                         </details>
                     </div>
 
-                    <p class="text-[11px] text-slate-400">Nota: un mismo dia excluido puede aparecer computado en varias categorias de motivo si coinciden fin de semana y festivo.</p>
+                    <p class="text-[11px] text-slate-400">Nota: las vacaciones escolares se muestran solo de forma informativa y no excluyen dias en la modalidad laborable.</p>
                 </div>
 
                 <div class="mt-8 flex justify-end">
