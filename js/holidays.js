@@ -79,8 +79,7 @@ APP.Holidays = {
         this.addHoliday(hols, APP.Utils.formatDate(holyWednesday), { type: 'school', name: 'Semana Santa' });
         this.addHoliday(hols, APP.Utils.formatDate(thu), { type: 'nat', name: 'Jueves Santo' });
         this.addHoliday(hols, APP.Utils.formatDate(fri), { type: 'nat', name: 'Viernes Santo' });
-        this.addHoliday(hols, APP.Utils.formatDate(easterMonday), { type: 'm_loc', name: 'Lunes de Pascua' });
-        this.addHoliday(hols, APP.Utils.formatDate(easterMonday), { type: 'f_loc', name: 'Lunes de Pascua' });
+        this.addHoliday(hols, APP.Utils.formatDate(easterMonday), { type: 'both_loc', name: 'Lunes de Pascua' });
 
         return hols;
     },
