@@ -8,8 +8,9 @@ APP.Utils = {
     holidayTypeOrder: {
         nat: 0,
         m_loc: 1,
-        f_loc: 2,
-        school: 3
+        both_loc: 2,
+        f_loc: 3,
+        school: 4
     },
 
     formatDate(date) {
@@ -41,6 +42,7 @@ APP.Utils = {
         const labels = {
             nat: 'Nacional / Autonomico',
             m_loc: 'Local Madre',
+            both_loc: 'Local Madre y Padre',
             f_loc: 'Local Padre',
             school: 'Vacaciones escolares'
         };
@@ -51,6 +53,7 @@ APP.Utils = {
         const names = {
             nat: 'Festivo nacional/autonomico',
             m_loc: 'Festivo local madre',
+            both_loc: 'Festivo local madre y padre',
             f_loc: 'Festivo local padre',
             school: 'Vacaciones escolares'
         };
@@ -90,14 +93,34 @@ APP.Utils = {
 
         const seen = new Set();
         const normalized = [];
+        let momLocalHoliday = null;
+        let dadLocalHoliday = null;
 
         holidays.forEach((entry) => {
             const holiday = this.normalizeHolidayEntry(entry);
-            if (!holiday || seen.has(holiday.type)) return;
+            if (!holiday) return;
+
+            if (holiday.type === 'm_loc') momLocalHoliday = holiday;
+            if (holiday.type === 'f_loc') dadLocalHoliday = holiday;
+            if (holiday.type === 'both_loc') {
+                momLocalHoliday = null;
+                dadLocalHoliday = null;
+            }
+
+            if (seen.has(holiday.type)) return;
 
             seen.add(holiday.type);
             normalized.push(holiday);
         });
+
+        if (momLocalHoliday && dadLocalHoliday && momLocalHoliday.name === dadLocalHoliday.name) {
+            const withoutSplitLocals = normalized.filter((holiday) => holiday.type !== 'm_loc' && holiday.type !== 'f_loc');
+            withoutSplitLocals.push({
+                type: 'both_loc',
+                name: momLocalHoliday.name || this.defaultHolidayName('both_loc')
+            });
+            return this.sortHolidays(withoutSplitLocals);
+        }
 
         return this.sortHolidays(normalized);
     },
@@ -129,8 +152,8 @@ APP.Utils = {
         const holidays = this.normalizeHolidayArray(APP.State.data[ds]?.holidays);
         return holidays.some((holiday) => {
             if (holiday.type === 'nat') return true;
-            if (role === 'mom' && holiday.type === 'm_loc') return true;
-            if (role === 'dad' && holiday.type === 'f_loc') return true;
+            if (role === 'mom' && (holiday.type === 'm_loc' || holiday.type === 'both_loc')) return true;
+            if (role === 'dad' && (holiday.type === 'f_loc' || holiday.type === 'both_loc')) return true;
             return false;
         });
     },

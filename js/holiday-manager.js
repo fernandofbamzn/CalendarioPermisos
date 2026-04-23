@@ -34,6 +34,10 @@ APP.HolidayManager = {
                             <div class="text-left"><p class="text-sm font-bold text-purple-900">Local madre</p></div>
                         </button>
 
+                        <button onclick="APP.HolidayManager.set('${ds}', 'both_loc')" class="p-4 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-2xl flex items-center gap-3 transition-all">
+                            <div class="text-left"><p class="text-sm font-bold text-indigo-900">Local madre y padre</p></div>
+                        </button>
+
                         <button onclick="APP.HolidayManager.set('${ds}', 'f_loc')" class="p-4 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-2xl flex items-center gap-3 transition-all">
                             <div class="text-left"><p class="text-sm font-bold text-blue-900">Local padre</p></div>
                         </button>

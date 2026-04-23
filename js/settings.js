@@ -191,11 +191,19 @@ APP.Settings = {
             return;
         }
 
+        const typeClass = {
+            nat: 'text-red-500',
+            m_loc: 'text-purple-500',
+            both_loc: 'text-indigo-500',
+            f_loc: 'text-blue-500',
+            school: 'text-amber-500'
+        };
+
         table.innerHTML = rows.map(({ ds, holiday }) => `
             <tr class="border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
                 <td class="py-3 text-[10px] font-bold text-indigo-600">${ds}</td>
                 <td class="py-3 text-[10px] text-slate-700">${holiday.name || 'Festivo'}</td>
-                <td class="py-3 text-[10px] text-slate-500">${APP.Utils.getHolidayLabel(holiday.type)}</td>
+                <td class="py-3 text-[10px] ${typeClass[holiday.type] || 'text-slate-500'}">${APP.Utils.getHolidayLabel(holiday.type)}</td>
                 <td class="py-3 text-right">
                     <button onclick="APP.HolidayManager.open('${ds}', '${holiday.type}')" class="p-1.5 text-slate-400 hover:text-indigo-600">Editar</button>
                     <button onclick="APP.Settings.removeHoliday('${ds}', '${holiday.type}')" class="p-1.5 text-slate-400 hover:text-red-600">Borrar</button>
@@ -207,7 +215,10 @@ APP.Settings = {
     removeHoliday(ds, type) {
         if (!APP.State.data[ds]) return;
 
-        const holidays = APP.Utils.removeHolidayType(APP.State.data[ds].holidays, type);
+        let holidays = APP.Utils.removeHolidayType(APP.State.data[ds].holidays, type);
+        if ((type === 'm_loc' || type === 'f_loc') && APP.Utils.hasHolidayType(holidays, 'both_loc')) {
+            holidays = APP.Utils.removeHolidayType(holidays, 'both_loc');
+        }
         if (holidays.length > 0) APP.State.data[ds].holidays = holidays;
         else delete APP.State.data[ds].holidays;
 

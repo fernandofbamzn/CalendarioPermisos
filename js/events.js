@@ -142,7 +142,7 @@ APP.Events = {
         if (t === 'common_hol') return APP.Utils.hasHolidayType(d.holidays, 'nat');
         if (t.includes('hol')) {
             const type = t === 'mom_hol' ? 'm_loc' : 'f_loc';
-            return APP.Utils.hasHolidayType(d.holidays, type);
+            return APP.Utils.hasHolidayType(d.holidays, type) || APP.Utils.hasHolidayType(d.holidays, 'both_loc');
         }
 
         const role = t.startsWith('mom') ? 'm' : 'f';
@@ -168,9 +168,35 @@ APP.Events = {
                 : APP.Utils.removeHolidayType(d.holidays, 'nat');
         } else if (t.includes('hol')) {
             const type = t === 'mom_hol' ? 'm_loc' : 'f_loc';
-            d.holidays = turnOn
-                ? APP.Utils.upsertHoliday(d.holidays, { type, name: APP.Utils.defaultHolidayName(type) })
-                : APP.Utils.removeHolidayType(d.holidays, type);
+            if (turnOn) {
+                const existingHolidays = APP.Utils.normalizeHolidayArray(d.holidays);
+                const hasOtherLocalType = type === 'm_loc'
+                    ? APP.Utils.hasHolidayType(existingHolidays, 'f_loc')
+                    : APP.Utils.hasHolidayType(existingHolidays, 'm_loc');
+                const hasBothLocalType = APP.Utils.hasHolidayType(existingHolidays, 'both_loc');
+
+                if (hasBothLocalType || hasOtherLocalType) {
+                    const baseName = existingHolidays.find((holiday) => holiday.type === 'both_loc' || holiday.type === (type === 'm_loc' ? 'f_loc' : 'm_loc'))?.name;
+                    d.holidays = APP.Utils.upsertHoliday(existingHolidays, {
+                        type: 'both_loc',
+                        name: baseName || APP.Utils.defaultHolidayName('both_loc')
+                    });
+                    d.holidays = APP.Utils.removeHolidayType(d.holidays, 'm_loc');
+                    d.holidays = APP.Utils.removeHolidayType(d.holidays, 'f_loc');
+                } else {
+                    d.holidays = APP.Utils.upsertHoliday(d.holidays, { type, name: APP.Utils.defaultHolidayName(type) });
+                }
+            } else {
+                const existingHolidays = APP.Utils.normalizeHolidayArray(d.holidays);
+                if (APP.Utils.hasHolidayType(existingHolidays, 'both_loc')) {
+                    const bothName = existingHolidays.find((holiday) => holiday.type === 'both_loc')?.name || APP.Utils.defaultHolidayName('both_loc');
+                    const remainingType = type === 'm_loc' ? 'f_loc' : 'm_loc';
+                    d.holidays = APP.Utils.removeHolidayType(existingHolidays, 'both_loc');
+                    d.holidays = APP.Utils.upsertHoliday(d.holidays, { type: remainingType, name: bothName });
+                } else {
+                    d.holidays = APP.Utils.removeHolidayType(existingHolidays, type);
+                }
+            }
         } else {
             const role = t.startsWith('mom') ? 'm' : 'f';
             const type = t.split('_')[1];

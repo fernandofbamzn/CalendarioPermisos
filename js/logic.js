@@ -25,7 +25,11 @@ APP.Logic = {
         const parent = role === 'mom' ? APP.State.parents.mom : APP.State.parents.dad;
         const holidays = APP.Utils.normalizeHolidayArray(dataSource[ds]?.holidays);
         const national = holidays.some((holiday) => holiday.type === 'nat');
-        const local = holidays.some((holiday) => (role === 'mom' ? holiday.type === 'm_loc' : holiday.type === 'f_loc'));
+        const local = holidays.some((holiday) => (
+            role === 'mom'
+                ? holiday.type === 'm_loc' || holiday.type === 'both_loc'
+                : holiday.type === 'f_loc' || holiday.type === 'both_loc'
+        ));
         const school = Boolean(parent.isTeacher) && holidays.some((holiday) => holiday.type === 'school');
 
         return {
