@@ -4,19 +4,22 @@
 window.APP = window.APP || {};
 
 APP.Holidays = {
-    // Festivos nacionales de Espana (fijos)
+    // Festivos nacionales de Espana (fijos) y especificos
     fixed: {
         '01-01': { type: 'nat', name: 'Ano Nuevo' },
         '01-06': { type: 'nat', name: 'Dia de Reyes' },
         '05-01': { type: 'nat', name: 'Dia del Trabajo' },
         '08-15': { type: 'nat', name: 'Asuncion' },
+        '10-12': { type: 'nat', name: 'Fiesta del Pilar' },
         '11-01': { type: 'nat', name: 'Todos los Santos' },
         '12-06': { type: 'nat', name: 'Dia de la Constitucion' },
         '12-08': { type: 'nat', name: 'Inmaculada Concepcion' },
-        '12-25': { type: 'nat', name: 'Navidad' }
+        '12-25': { type: 'nat', name: 'Navidad' },
+        '12-24': { type: 'f_loc', name: 'Nochebuena', shiftIfSunday: false },
+        '12-31': { type: 'f_loc', name: 'Nochevieja', shiftIfSunday: false }
     },
 
-    // Aragon
+    // Autonomicos
     regional: {
         Aragon: {
             '04-23': { type: 'nat', name: 'San Jorge' }
@@ -28,14 +31,23 @@ APP.Holidays = {
         target[dateStr] = APP.Utils.upsertHoliday(target[dateStr], holiday);
     },
 
-    // Aplica el traslado general al lunes cuando un festivo fijo cae en domingo.
-    getObservedDateString(year, monthDay) {
+    // Aplica el traslado general al lunes cuando un festivo cae en domingo.
+    applyShiftIfSunday(year, monthDay, holidayObj) {
         const [month, day] = monthDay.split('-').map(Number);
         const date = new Date(year, month - 1, day);
-        if (date.getDay() === 0) {
+        
+        if (holidayObj.shiftIfSunday !== false && date.getDay() === 0) {
             date.setDate(date.getDate() + 1);
+            return {
+                dateStr: APP.Utils.formatDate(date),
+                holiday: { ...holidayObj, name: `${holidayObj.name} (trasladada)` }
+            };
         }
-        return APP.Utils.formatDate(date);
+        
+        return {
+            dateStr: APP.Utils.formatDate(date),
+            holiday: holidayObj
+        };
     },
 
     getEaster(year) {
@@ -48,24 +60,19 @@ APP.Holidays = {
     getHolidaysForYear(year) {
         const hols = {};
 
-        Object.entries(this.fixed).forEach(([monthDay, holiday]) => {
-            this.addHoliday(hols, this.getObservedDateString(year, monthDay), holiday);
+        // Festivos fijos (nacionales y particulares)
+        Object.entries(this.fixed).forEach(([monthDay, holidayObj]) => {
+            const { dateStr, holiday } = this.applyShiftIfSunday(year, monthDay, holidayObj);
+            this.addHoliday(hols, dateStr, holiday);
         });
 
-        Object.entries(this.regional.Aragon).forEach(([monthDay, holiday]) => {
-            this.addHoliday(hols, this.getObservedDateString(year, monthDay), holiday);
+        // Festivos autonomicos
+        Object.entries(this.regional.Aragon).forEach(([monthDay, holidayObj]) => {
+            const { dateStr, holiday } = this.applyShiftIfSunday(year, monthDay, holidayObj);
+            this.addHoliday(hols, dateStr, holiday);
         });
 
-        const pilar = new Date(year, 9, 12);
-        if (pilar.getDay() === 0) {
-            this.addHoliday(hols, `${year}-10-13`, { type: 'nat', name: 'Fiesta del Pilar (trasladada)' });
-        } else {
-            this.addHoliday(hols, `${year}-10-12`, { type: 'nat', name: 'Fiesta del Pilar' });
-        }
-
-        this.addHoliday(hols, `${year}-12-24`, { type: 'f_loc', name: 'Nochebuena' });
-        this.addHoliday(hols, `${year}-12-31`, { type: 'f_loc', name: 'Nochevieja' });
-
+        // Semana Santa calculada (movil)
         const easter = this.getEaster(year);
         const holyMonday = APP.Utils.addDays(easter, -6);
         const holyTuesday = APP.Utils.addDays(easter, -5);

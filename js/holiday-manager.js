@@ -22,7 +22,7 @@ APP.HolidayManager = {
                 <div class="space-y-4">
                     <div>
                         <label class="block text-[10px] font-bold text-slate-400 uppercase mb-2">Descripcion del festivo</label>
-                        <input type="text" id="holName" placeholder="Ej: Ano Nuevo" value="${currentHoliday?.name || ''}" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-indigo-100 transition-all">
+                        <input type="text" id="holName" data-original-name="${currentHoliday?.name || ''}" data-original-type="${currentHoliday?.type || ''}" placeholder="Ej: Ano Nuevo" value="${currentHoliday?.name || ''}" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-indigo-100 transition-all">
                     </div>
 
                     <div class="grid grid-cols-1 gap-3">
@@ -59,10 +59,24 @@ APP.HolidayManager = {
 
     // Guarda o actualiza un tipo de festivo concreto dentro del dia.
     set(ds, type) {
-        const name = document.getElementById('holName').value || APP.Utils.defaultHolidayName(type);
+        const inputEl = document.getElementById('holName');
+        const inputValue = inputEl.value.trim();
+        const originalName = inputEl.getAttribute('data-original-name') || '';
+        const originalType = inputEl.getAttribute('data-original-type') || '';
+        
+        let targetName = inputValue;
+
+        if (inputValue === originalName && type !== originalType) {
+            const existingHolidays = APP.Utils.normalizeHolidayArray(APP.State.data[ds]?.holidays || []);
+            const existingOfType = existingHolidays.find(h => h.type === type);
+            targetName = existingOfType ? existingOfType.name : APP.Utils.defaultHolidayName(type);
+        } else {
+            targetName = inputValue || APP.Utils.defaultHolidayName(type);
+        }
+
         if (!APP.State.data[ds]) APP.State.data[ds] = {};
 
-        APP.State.data[ds].holidays = APP.Utils.upsertHoliday(APP.State.data[ds].holidays, { type, name });
+        APP.State.data[ds].holidays = APP.Utils.upsertHoliday(APP.State.data[ds].holidays, { type, name: targetName });
 
         APP.State.save();
         APP.UI.renderCalendar();
@@ -73,13 +87,12 @@ APP.HolidayManager = {
         APP.Wizard.close();
     },
 
-    // Limpia las ediciones manuales y repone los festivos base si existian.
+    // Limpia las ediciones manuales.
     clear(ds) {
         if (APP.State.data[ds]) {
             delete APP.State.data[ds].holidays;
         }
 
-        APP.Holidays.restoreBaseHolidays(APP.State.data, ds);
         if (APP.State.data[ds] && Object.keys(APP.State.data[ds]).length === 0) delete APP.State.data[ds];
 
         APP.State.save();

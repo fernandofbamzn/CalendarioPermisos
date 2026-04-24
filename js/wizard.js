@@ -295,25 +295,23 @@ APP.Wizard = {
         return data;
     },
 
-    isHolidayForRole(dataSource, ds, resolvedRole, parentObj) {
-        const holidays = APP.Utils.normalizeHolidayArray(dataSource[ds]?.holidays);
-        return holidays.some((holiday) => {
-            if (holiday.type === 'nat') return true;
-            if (resolvedRole === 'mom' && (holiday.type === 'm_loc' || holiday.type === 'both_loc')) return true;
-            if (resolvedRole === 'dad' && (holiday.type === 'f_loc' || holiday.type === 'both_loc')) return true;
-            if (parentObj.isTeacher && holiday.type === 'school') return true;
-            return false;
-        });
+    isHolidayForRole(dataSource, ds, resolvedRole, parentObj, cat) {
+        const impact = APP.Logic.getHolidayImpact(ds, resolvedRole, dataSource);
+        if (impact.isLegalHoliday) return true;
+        
+        if (parentObj.isTeacher && impact.isSchoolBreak && cat !== 'lac') return true;
+        
+        return false;
     },
 
     // Para categorias de dias laborables, el inicio tambien debe caer en un dia valido.
-    alignToNextWorkingDay(pointer, resolvedRole, parentObj, dataSource) {
+    alignToNextWorkingDay(pointer, resolvedRole, parentObj, dataSource, cat) {
         const current = new Date(pointer);
 
         while (true) {
             const ds = APP.Utils.formatDate(current);
             const isWeekend = APP.Utils.isWeekend(current);
-            const isHoliday = this.isHolidayForRole(dataSource, ds, resolvedRole, parentObj);
+            const isHoliday = this.isHolidayForRole(dataSource, ds, resolvedRole, parentObj, cat);
 
             if (!isHoliday && !(parentObj.weekendsAsHolidays && isWeekend)) {
                 return current;
@@ -323,10 +321,10 @@ APP.Wizard = {
         }
     },
 
-    previewPlacement(pointer, days, skipHolidays, resolvedRole, parentObj, dataSource) {
+    previewPlacement(pointer, days, skipHolidays, resolvedRole, parentObj, dataSource, cat) {
         let current = new Date(pointer);
         if (skipHolidays) {
-            current = this.alignToNextWorkingDay(current, resolvedRole, parentObj, dataSource);
+            current = this.alignToNextWorkingDay(current, resolvedRole, parentObj, dataSource, cat);
         }
 
         let filled = 0;
@@ -336,7 +334,7 @@ APP.Wizard = {
         while (filled < days) {
             const ds = APP.Utils.formatDate(current);
             const isWeekend = APP.Utils.isWeekend(current);
-            const isHoliday = this.isHolidayForRole(dataSource, ds, resolvedRole, parentObj);
+            const isHoliday = this.isHolidayForRole(dataSource, ds, resolvedRole, parentObj, cat);
 
             let skip = false;
             if (skipHolidays) {
@@ -380,10 +378,10 @@ APP.Wizard = {
             }
 
             const lactation = APP.Logic.calculateLactation(lastVoluntaryDay, parentObj.hours, resolvedRole, dataSource);
-            const workingPreview = this.previewPlacement(pointer, lactation.working.days, true, resolvedRole, parentObj, dataSource);
+            const workingPreview = this.previewPlacement(pointer, lactation.working.days, true, resolvedRole, parentObj, dataSource, 'lac');
 
             if (parentObj.isTeacher) {
-                const naturalPreview = this.previewPlacement(pointer, lactation.natural.days, false, resolvedRole, parentObj, dataSource);
+                const naturalPreview = this.previewPlacement(pointer, lactation.natural.days, false, resolvedRole, parentObj, dataSource, 'lac');
                 const selectedMode = selections[role] || lactation.recommendedMode;
 
                 teacherPrompts.push({
@@ -414,14 +412,14 @@ APP.Wizard = {
 
         let current = new Date(pointer);
         if (skipHolidays) {
-            current = this.alignToNextWorkingDay(current, resolvedRole, parentObj, dataSource);
+            current = this.alignToNextWorkingDay(current, resolvedRole, parentObj, dataSource, cat);
         }
 
         let filled = 0;
         while (filled < daysToFill) {
             const ds = APP.Utils.formatDate(current);
             const isWeekend = APP.Utils.isWeekend(current);
-            const isHoliday = this.isHolidayForRole(dataSource, ds, resolvedRole, parentObj);
+            const isHoliday = this.isHolidayForRole(dataSource, ds, resolvedRole, parentObj, cat);
 
             let skip = false;
             if (skipHolidays) {

@@ -222,8 +222,6 @@ APP.Settings = {
         if (holidays.length > 0) APP.State.data[ds].holidays = holidays;
         else delete APP.State.data[ds].holidays;
 
-        APP.Holidays.restoreBaseHolidays(APP.State.data, ds);
-
         if (Object.keys(APP.State.data[ds]).length === 0) delete APP.State.data[ds];
 
         APP.State.save();
