@@ -150,8 +150,8 @@ body {
     box-shadow: 0 12px 20px -5px rgba(0, 0, 0, 0.05);
 }
 
-::-webkit-scrollbar { width: 8px; }
-::-webkit-scrollbar-track { background: #f1f5f9; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 4px; }
 ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
@@ -632,7 +632,13 @@ body.print-mode .print-root {
 
 @media (max-width: 768px) {
     .sticky-dashboard {
-        top: 4.75rem;
+        top: 0;
+        margin-left: -1.5rem;
+        margin-right: -1.5rem;
+        width: calc(100% + 3rem);
+        border-radius: 0;
+        border-left: none;
+        border-right: none;
     }
 
     .ai-panel {

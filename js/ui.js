@@ -48,6 +48,29 @@ APP.UI = {
         this.elements.labels.dad.textContent = APP.State.parents.dad.name || 'Padre';
     },
 
+    switchTab(tabId) {
+        const tabs = ['mom', 'dad', 'common'];
+        tabs.forEach(t => {
+            const btn = document.getElementById('tabBtn_' + t);
+            const content = document.getElementById('tabContent_' + t);
+            if (!btn || !content) return;
+            
+            if (t === tabId) {
+                btn.classList.remove('text-slate-400', 'border-transparent');
+                if (t === 'mom') btn.classList.add('text-purple-600', 'border-purple-600');
+                if (t === 'dad') btn.classList.add('text-blue-600', 'border-blue-600');
+                if (t === 'common') btn.classList.add('text-red-600', 'border-red-600');
+                content.classList.remove('hidden');
+                content.classList.add('flex');
+            } else {
+                btn.classList.add('text-slate-400', 'border-transparent');
+                btn.classList.remove('text-purple-600', 'border-purple-600', 'text-blue-600', 'border-blue-600', 'text-red-600', 'border-red-600');
+                content.classList.add('hidden');
+                content.classList.remove('flex');
+            }
+        });
+    },
+
     renderCalendar() {
         if (!APP.State.birthDate) return;
 
@@ -441,9 +464,14 @@ APP.UI = {
         }
 
         // Ocultar/mostrar secciones segun tipo de familia
-        const dadSection = document.getElementById('dadToolbarSection');
+        const dadTab = document.getElementById('tabBtn_dad');
         const dadDashboard = document.getElementById('dadDashboardCard');
-        if (dadSection) dadSection.classList.toggle('hidden', isMono);
+        if (dadTab) {
+            dadTab.classList.toggle('hidden', isMono);
+            if (isMono && !document.getElementById('tabContent_dad').classList.contains('hidden')) {
+                APP.UI.switchTab('mom');
+            }
+        }
         if (dadDashboard) dadDashboard.classList.toggle('hidden', isMono);
     },
 
