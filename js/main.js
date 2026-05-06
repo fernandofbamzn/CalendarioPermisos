@@ -24,4 +24,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (e.target.files[0]) APP.State.importJSON(e.target.files[0]);
     };
     document.getElementById('btnSettings').onclick = () => APP.Settings.open();
+    document.getElementById('btnEmailSummary').onclick = () => APP.UI.sendSummaryEmail();
+    document.getElementById('btnEmailBackup').onclick = () => APP.UI.sendBackupEmail();
 });

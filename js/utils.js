@@ -44,7 +44,7 @@ APP.Utils = {
             m_loc: 'Local Madre',
             both_loc: 'Local Madre y Padre',
             f_loc: 'Local Padre',
-            school: 'Vacaciones escolares'
+            school: 'Periodo no lectivo'
         };
         return labels[type] || 'Festivo';
     },
@@ -55,7 +55,7 @@ APP.Utils = {
             m_loc: 'Festivo local madre',
             both_loc: 'Festivo local madre y padre',
             f_loc: 'Festivo local padre',
-            school: 'Vacaciones escolares'
+            school: 'Periodo no lectivo'
         };
         return names[type] || 'Festivo';
     },

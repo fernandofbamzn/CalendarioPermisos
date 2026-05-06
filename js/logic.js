@@ -1,10 +1,15 @@
 /**
  * LOGICA DE NEGOCIO (CALCULOS)
+ * Base legal: RDL 9/2025, art. 37.4 ET
  */
 window.APP = window.APP || {};
 
 APP.Logic = {
+    // Devuelve los limites segun el tipo de familia configurado.
     getPlanLimits() {
+        if (APP.State.familyType === 'monoparental') {
+            return APP.CONFIG.monoparental;
+        }
         return APP.CONFIG.plan;
     },
 
@@ -41,7 +46,7 @@ APP.Logic = {
         };
     },
 
-    // Calcula siempre ambas alternativas para que la UI o el asistente decidan despues.
+    // Calcula ambas alternativas de lactancia para que la UI o el asistente decidan despues.
     calculateLactation(startDate, hoursPerDay, role, dataSource = APP.State.data) {
         const parent = role === 'mom' ? APP.State.parents.mom : APP.State.parents.dad;
 
@@ -158,7 +163,7 @@ APP.Logic = {
     },
 
     validatePlacement(role, cat, date) {
-        if (!APP.State.birthDate) return true;
+        if (!APP.State.birthDate) return { valid: true };
 
         const birth = new Date(APP.State.birthDate);
         const mandatoryEnd = APP.Utils.addDays(birth, 42);
@@ -175,8 +180,39 @@ APP.Logic = {
         return { valid: true };
     },
 
+    // Genera avisos (no bloqueos) cuando se superan los limites legales.
+    getWarnings() {
+        const warnings = [];
+        const limits = this.getPlanLimits();
+        const metrics = this.updateMetrics();
+        const c = metrics.counts;
+        const isMono = APP.State.familyType === 'monoparental';
+
+        // Semanas voluntarias
+        const volLimitDays = limits.voluntaryWeeks * 7;
+        if (c.m_vol > volLimitDays) {
+            const parent = isMono ? APP.State.parents.mom.name : APP.State.parents.mom.name;
+            warnings.push(`⚠️ ${parent}: ${(c.m_vol / 7).toFixed(1)} semanas voluntarias marcadas (limite: ${limits.voluntaryWeeks})`);
+        }
+        if (!isMono && c.f_vol > volLimitDays) {
+            warnings.push(`⚠️ ${APP.State.parents.dad.name}: ${(c.f_vol / 7).toFixed(1)} semanas voluntarias marcadas (limite: ${limits.voluntaryWeeks})`);
+        }
+
+        const momFlexExtra = APP.State.parents.mom.extraWeeks || 0;
+        const dadFlexExtra = APP.State.parents.dad.extraWeeks || 0;
+        if (c.m_flex > (limits.flexibleWeeks + momFlexExtra) * 7) {
+            const parent = isMono ? APP.State.parents.mom.name : APP.State.parents.mom.name;
+            warnings.push(`⚠️ ${parent}: ${(c.m_flex / 7).toFixed(1)} semanas flexibles marcadas (limite: ${limits.flexibleWeeks + momFlexExtra})`);
+        }
+        if (!isMono && c.f_flex > (limits.flexibleWeeks + dadFlexExtra) * 7) {
+            warnings.push(`⚠️ ${APP.State.parents.dad.name}: ${(c.f_flex / 7).toFixed(1)} semanas flexibles marcadas (limite: ${limits.flexibleWeeks + dadFlexExtra})`);
+        }
+
+        return warnings;
+    },
+
     updateMetrics() {
-        const counts = { m_vol: 0, m_ex: 0, m_vac: 0, m_lac: 0, f_vol: 0, f_ex: 0, f_vac: 0, f_lac: 0, overlap: 0 };
+        const counts = { m_vol: 0, m_ex: 0, m_vac: 0, m_lac: 0, m_flex: 0, m_other: 0, f_vol: 0, f_ex: 0, f_vac: 0, f_lac: 0, f_flex: 0, f_other: 0, overlap: 0 };
         let lastDate = 0;
         let mReturn = 0;
         let fReturn = 0;
@@ -189,11 +225,15 @@ APP.Logic = {
             if (d.m === 'ex') counts.m_ex++;
             if (d.m === 'vac') counts.m_vac++;
             if (d.m === 'lac') counts.m_lac++;
+            if (d.m === 'flex') counts.m_flex++;
+            if (d.m === 'other') counts.m_other++;
 
             if (d.f === 'vol') counts.f_vol++;
             if (d.f === 'ex') counts.f_ex++;
             if (d.f === 'vac') counts.f_vac++;
             if (d.f === 'lac') counts.f_lac++;
+            if (d.f === 'flex') counts.f_flex++;
+            if (d.f === 'other') counts.f_other++;
 
             if (d.m && d.f && d.m !== 'mandatory' && d.f !== 'mandatory') counts.overlap++;
 

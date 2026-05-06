@@ -27,6 +27,20 @@ APP.Settings = {
                 </div>
 
                 <div id="sectionGeneral" class="space-y-6 animate-fade">
+                    <div class="p-5 bg-indigo-50 rounded-2xl border border-indigo-100">
+                        <p class="text-[10px] font-bold text-indigo-500 uppercase mb-3">Tipo de familia (RDL 9/2025)</p>
+                        <div class="flex gap-4">
+                            <label class="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer">
+                                <input type="radio" name="familyType" value="biparental" ${APP.State.familyType === 'biparental' ? 'checked' : ''} class="accent-indigo-600">
+                                Biparental (19 sem × 2)
+                            </label>
+                            <label class="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer">
+                                <input type="radio" name="familyType" value="monoparental" ${APP.State.familyType === 'monoparental' ? 'checked' : ''} class="accent-indigo-600">
+                                Monoparental (32 sem)
+                            </label>
+                        </div>
+                    </div>
+
                     <div class="grid grid-cols-2 gap-4">
                         <div class="p-4 bg-purple-50 rounded-2xl border border-purple-100 flex items-center justify-between">
                             <div>
@@ -57,9 +71,25 @@ APP.Settings = {
                 </div>
 
                 <div id="sectionHolidays" class="hidden space-y-4 animate-fade">
+                    <div class="p-4 bg-amber-50 rounded-2xl border border-amber-200 space-y-2">
+                        <p class="text-xs font-bold text-amber-900">Como gestionar festivos</p>
+                        <p class="text-[10px] text-amber-800">Los festivos <strong>nacionales</strong> (BOE) y <strong>autonomicos de Aragon</strong> (BOA) se cargan automaticamente. Los <strong>festivos locales</strong> (2 por municipio) debes añadirlos manualmente.</p>
+                        <p class="text-[10px] text-amber-800">Los <strong>periodos no lectivos</strong> (Navidad, Semana Santa) son aproximados. Consulta el calendario escolar oficial del Gobierno de Aragon para ajustarlos.</p>
+                        <details class="mt-2">
+                            <summary class="text-[10px] font-bold text-amber-700 cursor-pointer">Fuentes oficiales para consultar festivos</summary>
+                            <ul class="mt-2 text-[10px] text-amber-800 space-y-1 list-disc list-inside">
+                                <li><strong>Nacionales:</strong> BOE - Resolucion anual de fiestas laborales (<a href="https://www.boe.es" target="_blank" class="underline">boe.es</a>)</li>
+                                <li><strong>Aragon:</strong> BOA - Calendario laboral (<a href="https://www.aragon.es/trabajo-y-relaciones-laborales/calendario-laboral" target="_blank" class="underline">aragon.es</a>)</li>
+                                <li><strong>Locales Huesca:</strong> BOP Huesca (<a href="https://bop.dphuesca.es" target="_blank" class="underline">bop.dphuesca.es</a>)</li>
+                                <li><strong>Locales Zaragoza:</strong> BOP Zaragoza (<a href="https://bop.dpz.es" target="_blank" class="underline">bop.dpz.es</a>)</li>
+                                <li><strong>Locales Teruel:</strong> BOP Teruel (<a href="https://236ws.dpteruel.es/bop" target="_blank" class="underline">236ws.dpteruel.es</a>)</li>
+                                <li><strong>Calendario escolar:</strong> DGA - Educacion (<a href="https://educa.aragon.es/calendario-escolar" target="_blank" class="underline">educa.aragon.es</a>)</li>
+                            </ul>
+                        </details>
+                    </div>
                     <div class="flex justify-between items-center bg-indigo-50 p-4 rounded-2xl">
                         <p class="text-[10px] font-bold text-indigo-400 uppercase">Tabla de festivos configurados</p>
-                        <button onclick="APP.Settings.addHolidayRow()" class="text-[10px] bg-white px-3 py-1 rounded-lg border border-indigo-100 font-bold text-indigo-600 hover:bg-indigo-100 transition-colors">+ Anadir fila</button>
+                        <button onclick="APP.Settings.addHolidayRow()" class="text-[10px] bg-white px-3 py-1 rounded-lg border border-indigo-100 font-bold text-indigo-600 hover:bg-indigo-100 transition-colors">+ Anadir festivo local</button>
                     </div>
                     <div class="overflow-x-auto">
                         <table class="w-full text-left text-xs">
@@ -246,6 +276,12 @@ APP.Settings = {
     save() {
         APP.State.parents.mom.weekendsAsHolidays = document.getElementById('momWeekends').checked;
         APP.State.parents.dad.weekendsAsHolidays = document.getElementById('dadWeekends').checked;
+
+        // Tipo de familia
+        const familyRadio = document.querySelector('input[name="familyType"]:checked');
+        if (familyRadio) {
+            APP.State.familyType = familyRadio.value === 'monoparental' ? 'monoparental' : 'biparental';
+        }
 
         APP.State.parents.mom.name = document.getElementById('momName').value.trim() || 'Madre';
         APP.State.parents.mom.hours = parseFloat(document.getElementById('momHours').value) || APP.CONFIG.defaultWorkingHours;

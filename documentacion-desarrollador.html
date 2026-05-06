@@ -1,0 +1,572 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Documentacion para desarrolladores - Calendario de permisos</title>
+    <style>
+        :root {
+            --bg: #f6f7fb;
+            --panel: #ffffff;
+            --ink: #182033;
+            --muted: #5d667a;
+            --line: #d9deea;
+            --accent: #315fbd;
+            --accent-soft: #eaf0ff;
+            --code: #101827;
+            --code-ink: #e7edf8;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--ink);
+            font-family: Arial, Helvetica, sans-serif;
+            line-height: 1.58;
+        }
+
+        header {
+            background: var(--panel);
+            border-bottom: 1px solid var(--line);
+        }
+
+        .wrap {
+            width: min(1120px, calc(100% - 32px));
+            margin: 0 auto;
+        }
+
+        .hero {
+            padding: 42px 0 28px;
+        }
+
+        h1 {
+            margin: 0 0 10px;
+            font-size: clamp(2rem, 4vw, 3.4rem);
+            line-height: 1.05;
+            letter-spacing: 0;
+        }
+
+        .subtitle {
+            max-width: 760px;
+            margin: 0;
+            color: var(--muted);
+            font-size: 1.03rem;
+        }
+
+        .meta {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 22px;
+        }
+
+        .pill {
+            display: inline-flex;
+            align-items: center;
+            min-height: 30px;
+            padding: 5px 10px;
+            border: 1px solid var(--line);
+            border-radius: 6px;
+            background: #f9fbff;
+            color: var(--muted);
+            font-size: .86rem;
+            font-weight: 700;
+        }
+
+        main {
+            display: grid;
+            grid-template-columns: 250px minmax(0, 1fr);
+            gap: 24px;
+            padding: 26px 0 54px;
+        }
+
+        nav {
+            position: sticky;
+            top: 16px;
+            align-self: start;
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            padding: 14px;
+        }
+
+        nav strong {
+            display: block;
+            margin-bottom: 10px;
+            font-size: .82rem;
+            text-transform: uppercase;
+            color: var(--muted);
+        }
+
+        nav a {
+            display: block;
+            padding: 7px 8px;
+            border-radius: 6px;
+            color: var(--ink);
+            text-decoration: none;
+            font-size: .92rem;
+        }
+
+        nav a:hover,
+        nav a:focus {
+            background: var(--accent-soft);
+            color: var(--accent);
+        }
+
+        section {
+            margin-bottom: 22px;
+            padding: 24px;
+            background: var(--panel);
+            border: 1px solid var(--line);
+            border-radius: 8px;
+        }
+
+        h2 {
+            margin: 0 0 14px;
+            font-size: 1.45rem;
+            letter-spacing: 0;
+        }
+
+        h3 {
+            margin: 22px 0 8px;
+            font-size: 1.05rem;
+        }
+
+        p {
+            margin: 0 0 12px;
+        }
+
+        ul,
+        ol {
+            margin: 0 0 14px 22px;
+            padding: 0;
+        }
+
+        li {
+            margin-bottom: 6px;
+        }
+
+        code {
+            padding: 2px 5px;
+            border-radius: 4px;
+            background: #eef2f7;
+            color: #26324a;
+            font-family: Consolas, "Courier New", monospace;
+            font-size: .92em;
+        }
+
+        pre {
+            overflow-x: auto;
+            margin: 14px 0;
+            padding: 16px;
+            border-radius: 8px;
+            background: var(--code);
+            color: var(--code-ink);
+            font-family: Consolas, "Courier New", monospace;
+            font-size: .88rem;
+        }
+
+        pre code {
+            padding: 0;
+            background: transparent;
+            color: inherit;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 12px 0 18px;
+            font-size: .92rem;
+        }
+
+        th,
+        td {
+            padding: 10px;
+            border: 1px solid var(--line);
+            text-align: left;
+            vertical-align: top;
+        }
+
+        th {
+            background: #f3f6fb;
+        }
+
+        .note {
+            padding: 12px 14px;
+            border-left: 4px solid var(--accent);
+            background: var(--accent-soft);
+            color: #243451;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 14px;
+        }
+
+        .box {
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            padding: 14px;
+            background: #fbfcff;
+        }
+
+        .box h3 {
+            margin-top: 0;
+        }
+
+        @media (max-width: 840px) {
+            main {
+                grid-template-columns: 1fr;
+            }
+
+            nav {
+                position: static;
+            }
+
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="wrap hero">
+            <h1>Documentacion para desarrolladores</h1>
+            <p class="subtitle">Referencia tecnica de la aplicacion Calendario de permisos: estructura, ciclo de arranque, estado, calculos, festivos, asistente, exportacion y pautas de mantenimiento.</p>
+            <div class="meta">
+                <span class="pill">App estatica HTML/CSS/JS</span>
+                <span class="pill">Namespace global APP</span>
+                <span class="pill">Persistencia en localStorage</span>
+                <span class="pill">Curso objetivo 2026/2027</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="wrap">
+        <nav aria-label="Indice">
+            <strong>Indice</strong>
+            <a href="#resumen">Resumen</a>
+            <a href="#estructura">Estructura</a>
+            <a href="#carga">Orden de carga</a>
+            <a href="#estado">Estado</a>
+            <a href="#calculos">Reglas de calculo</a>
+            <a href="#festivos">Festivos</a>
+            <a href="#interaccion">Interaccion</a>
+            <a href="#exportacion">Exportacion</a>
+            <a href="#extender">Como extender</a>
+            <a href="#pruebas">Pruebas manuales</a>
+            <a href="#riesgos">Riesgos</a>
+        </nav>
+
+        <div>
+            <section id="resumen">
+                <h2>Resumen</h2>
+                <p>El proyecto es una aplicacion web estatica para planificar permisos familiares sobre un calendario visual. No usa bundler ni framework: <code>index.html</code> carga CSS, Tailwind desde CDN y los modulos JavaScript en orden fijo.</p>
+                <p>Todos los modulos escriben sobre <code>window.APP</code>. La separacion principal es:</p>
+                <ul>
+                    <li><code>APP.State</code>: estado funcional, normalizacion, guardado, importacion y exportacion JSON.</li>
+                    <li><code>APP.Logic</code>: reglas de negocio, lactancia, metricas e impacto de festivos.</li>
+                    <li><code>APP.Holidays</code>: generacion y fusion de festivos base.</li>
+                    <li><code>APP.UI</code>: render del calendario, estilos de celdas, dashboard y modal de lactancia.</li>
+                    <li><code>APP.Events</code>: eventos de entrada, herramientas y pintado por arrastre.</li>
+                    <li><code>APP.Wizard</code>: asistente de generacion automatica segun prioridades.</li>
+                </ul>
+                <p class="note">Las reglas especificas del caso Aragon/Huesca/Monzon 2026/2027 viven en <code>AGENTS.md</code>. Si cambian las reglas legales o el curso objetivo, actualiza primero esa fuente y despues sincroniza constantes y festivos en JavaScript.</p>
+            </section>
+
+            <section id="estructura">
+                <h2>Estructura del repositorio</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Ruta</th>
+                            <th>Responsabilidad</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>index.html</code></td>
+                            <td>Documento principal, layout, controles, modal compartido y carga de scripts.</td>
+                        </tr>
+                        <tr>
+                            <td><code>style.css</code></td>
+                            <td>Estilos propios de calendario, paneles, modo impresion y elementos especiales.</td>
+                        </tr>
+                        <tr>
+                            <td><code>scripts.js</code></td>
+                            <td>Archivo legado presente en raiz. Revisar antes de modificar para evitar duplicar logica existente en <code>js/</code>.</td>
+                        </tr>
+                        <tr>
+                            <td><code>GUIA_USO_Y_REFERENCIAS.md</code></td>
+                            <td>Guia visible desde la app mediante <code>APP.Docs</code>.</td>
+                        </tr>
+                        <tr>
+                            <td><code>AGENTS.md</code></td>
+                            <td>Reglas de contexto, constantes temporales y requisitos administrativos.</td>
+                        </tr>
+                        <tr>
+                            <td><code>js/*.js</code></td>
+                            <td>Modulos funcionales cargados por el navegador sin transpilacion.</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <h3>Modulo por modulo</h3>
+                <div class="grid">
+                    <div class="box">
+                        <h3><code>config.js</code></h3>
+                        <p>Define <code>APP.CONFIG</code>: semanas obligatorias/voluntarias, meses limite de lactancia, dias naturales docentes y horas de jornada por defecto.</p>
+                    </div>
+                    <div class="box">
+                        <h3><code>utils.js</code></h3>
+                        <p>Funciones puras de fecha, formato, fines de semana y normalizacion de festivos.</p>
+                    </div>
+                    <div class="box">
+                        <h3><code>state.js</code></h3>
+                        <p>Modelo persistido, herramientas permitidas, prioridad de categorias y compatibilidad hacia atras al hidratar JSON.</p>
+                    </div>
+                    <div class="box">
+                        <h3><code>holidays.js</code></h3>
+                        <p>Festivos fijos, autonomicos, Semana Santa, vacaciones escolares aproximadas y fusion con datos manuales.</p>
+                    </div>
+                    <div class="box">
+                        <h3><code>logic.js</code></h3>
+                        <p>Calculo de lactancia, metricas, limites de plan y validaciones de posicion.</p>
+                    </div>
+                    <div class="box">
+                        <h3><code>events.js</code></h3>
+                        <p>Entrada de fecha de nacimiento, seleccion de herramientas, pintado, borrado, doble clic semanal y reset.</p>
+                    </div>
+                    <div class="box">
+                        <h3><code>ui.js</code></h3>
+                        <p>Render de 18 meses, estilos de celda, tooltips, etiquetas, dashboard y modal de calculadora.</p>
+                    </div>
+                    <div class="box">
+                        <h3><code>wizard.js</code></h3>
+                        <p>Asistente de generacion: extras, vacaciones, prioridades, simulacion y aplicacion de resultados.</p>
+                    </div>
+                    <div class="box">
+                        <h3><code>settings.js</code></h3>
+                        <p>Modal de configuracion, fines de semana, modo edicion de festivos, tabla de festivos y datos de progenitores.</p>
+                    </div>
+                    <div class="box">
+                        <h3><code>holiday-manager.js</code></h3>
+                        <p>Editor puntual de festivos por fecha y tipo.</p>
+                    </div>
+                    <div class="box">
+                        <h3><code>pdf.js</code></h3>
+                        <p>Genera hojas imprimibles a partir del calendario renderizado y lanza <code>window.print()</code>.</p>
+                    </div>
+                    <div class="box">
+                        <h3><code>docs.js</code> y <code>gemini.js</code></h3>
+                        <p>Visor local de documentacion y lanzador externo de consultas a servicios de IA.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section id="carga">
+                <h2>Orden de carga y arranque</h2>
+                <p>El orden de los scripts en <code>index.html</code> es parte del contrato. Modulos como <code>state.js</code> dependen de <code>APP.CONFIG</code> y <code>APP.Utils</code>; <code>main.js</code> necesita que UI, eventos, PDF y settings ya existan.</p>
+                <pre><code>config.js
+utils.js
+state.js
+holidays.js
+logic.js
+holiday-manager.js
+ui.js
+pdf.js
+settings.js
+events.js
+main.js
+docs.js
+wizard.js
+gemini.js</code></pre>
+                <p>En <code>DOMContentLoaded</code>, <code>main.js</code> inicializa UI, eventos, intenta cargar estado previo y conecta botones de exportacion/importacion/configuracion. Algunos modulos tambien registran listeners propios en <code>DOMContentLoaded</code>, por ejemplo <code>wizard.js</code>, <code>docs.js</code> y <code>gemini.js</code>.</p>
+            </section>
+
+            <section id="estado">
+                <h2>Estado y persistencia</h2>
+                <p>La clave de almacenamiento es <code>planner_v8_state</code>. La serializacion excluye flags temporales de drag y normaliza datos para evitar entradas vacias o festivos duplicados.</p>
+                <pre><code>{
+  birthDate: Date | string | null,
+  currentTool: "mom_vol" | "dad_vol" | "eraser" | "...",
+  settings: {
+    holidayEditMode: boolean,
+    priorityOrder: [{ id: string, label: string }]
+  },
+  parents: {
+    mom: ParentConfig,
+    dad: ParentConfig
+  },
+  data: {
+    "YYYY-MM-DD": {
+      m?: "mandatory" | "vol" | "ex" | "vac" | "lac",
+      f?: "mandatory" | "vol" | "ex" | "vac" | "lac",
+      holidays?: [{ type: HolidayType, name: string }]
+    }
+  }
+}</code></pre>
+                <h3>Configuracion de progenitor</h3>
+                <ul>
+                    <li><code>name</code>: etiqueta visible.</li>
+                    <li><code>vacations</code>: dias de vacaciones que aplicara el asistente.</li>
+                    <li><code>vacationMode</code>: <code>working</code> salta no laborables; <code>natural</code> cuenta dias naturales.</li>
+                    <li><code>hours</code>: jornada diaria usada para convertir horas de lactancia en dias.</li>
+                    <li><code>isTeacher</code>: activa reglas docentes, limite de 12 meses y opcion de 28 dias naturales.</li>
+                    <li><code>weekendsAsHolidays</code>: si es true, sabados y domingos se saltan en calculos laborables.</li>
+                    <li><code>extraWeeks</code>: semanas adicionales usadas por el asistente.</li>
+                    <li><code>lactationType</code>: ultimo modo elegido para docentes.</li>
+                </ul>
+            </section>
+
+            <section id="calculos">
+                <h2>Reglas de calculo</h2>
+                <h3>Permiso obligatorio</h3>
+                <p>Al crear o hidratar estado con fecha de nacimiento, se generan 42 dias obligatorios para ambos progenitores desde <code>birthDate</code>. Esos dias no se pueden editar con las herramientas de pintado.</p>
+
+                <h3>Limites de plan</h3>
+                <p><code>APP.CONFIG.plan</code> contiene <code>mandatoryWeeks</code>, <code>voluntaryWeeks</code> y <code>totalWeeks</code>. La UI muestra las semanas voluntarias contra el limite configurado.</p>
+
+                <h3>Lactancia</h3>
+                <p><code>APP.Logic.calculateLactation(startDate, hoursPerDay, role, dataSource)</code> empieza el computo el dia siguiente a <code>startDate</code>, calcula hasta 9 meses o 12 meses si el progenitor es docente y devuelve dos alternativas cuando aplica:</p>
+                <ul>
+                    <li><code>working</code>: suma 1 hora por dia incluido y convierte con <code>Math.ceil(totalHoras / horasDiarias)</code>.</li>
+                    <li><code>natural</code>: solo para docentes, usa <code>APP.CONFIG.teacherLactationDays</code>.</li>
+                </ul>
+                <p>Los festivos legales excluyen dias del computo laborable. Los fines de semana se excluyen solo si <code>weekendsAsHolidays</code> esta activo. Las vacaciones escolares docentes se registran en el desglose y el asistente las salta para categorias distintas de lactancia.</p>
+
+                <h3>Asistente en cascada</h3>
+                <p><code>APP.Wizard.simulatePriorityRun()</code> genera un estado temporal y aplica las categorias segun <code>APP.State.settings.priorityOrder</code>. El puntero de fecha avanza en cascada: cada bloque empieza despues del anterior, con alineacion al siguiente dia laborable cuando la categoria debe saltar festivos.</p>
+                <p>Para docentes, el asistente simula los modos de lactancia y pide confirmar entre dias laborables o 28 dias naturales antes de aplicar cambios definitivos.</p>
+            </section>
+
+            <section id="festivos">
+                <h2>Festivos</h2>
+                <p>Los tipos admitidos son:</p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Tipo</th>
+                            <th>Significado</th>
+                            <th>Impacto</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><code>nat</code></td>
+                            <td>Nacional o autonomico.</td>
+                            <td>Festivo legal para ambos.</td>
+                        </tr>
+                        <tr>
+                            <td><code>m_loc</code></td>
+                            <td>Local de la madre.</td>
+                            <td>Festivo legal para <code>mom</code>.</td>
+                        </tr>
+                        <tr>
+                            <td><code>f_loc</code></td>
+                            <td>Local del padre.</td>
+                            <td>Festivo legal para <code>dad</code>.</td>
+                        </tr>
+                        <tr>
+                            <td><code>both_loc</code></td>
+                            <td>Local compartido.</td>
+                            <td>Festivo legal para ambos.</td>
+                        </tr>
+                        <tr>
+                            <td><code>school</code></td>
+                            <td>Vacaciones escolares.</td>
+                            <td>Informativo en calculadora; el asistente lo salta para docentes salvo en lactancia.</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p><code>APP.Utils.normalizeHolidayArray()</code> deduplica, ordena y fusiona locales de ambos progenitores en <code>both_loc</code> cuando comparten nombre. Usa siempre esa utilidad antes de comparar o guardar festivos.</p>
+                <p><code>APP.Holidays.populateBaseData()</code> genera festivos desde el anio de nacimiento hasta dos anios despues. Las ediciones manuales se guardan en <code>APP.State.data[ds].holidays</code> y se fusionan sin sobrescribir nombres existentes.</p>
+            </section>
+
+            <section id="interaccion">
+                <h2>Interaccion y UI</h2>
+                <p>El calendario renderiza 18 meses desde el mes de nacimiento. Cada celda tiene id <code>c-YYYY-MM-DD</code> en modo interactivo. Los estilos se recalculan con <code>APP.UI.applyCellStyles(cell, ds)</code>.</p>
+                <ul>
+                    <li>Clic y arrastre: aplica o retira la herramienta activa manteniendo el estado objetivo del primer dia.</li>
+                    <li>Doble clic: aplica o retira una semana completa de lunes a domingo.</li>
+                    <li>Context menu o modo edicion de festivos: abre <code>APP.HolidayManager</code>.</li>
+                    <li>Herramienta <code>eraser</code>: borra marcas de permisos, pero no borra festivos.</li>
+                    <li>Los dias obligatorios bloquean cualquier modificacion manual de permiso.</li>
+                </ul>
+                <p>El modal con id <code>wizardModal</code> es compartido por asistente, configuracion, editor de festivos, documentacion y calculadora. Al crear nuevas vistas modales, comprueba que no quedan handlers o clases incompatibles de usos anteriores.</p>
+            </section>
+
+            <section id="exportacion">
+                <h2>Exportacion</h2>
+                <h3>JSON</h3>
+                <p><code>APP.State.exportJSON()</code> descarga el estado funcional normalizado. <code>APP.State.importJSON(file)</code> hidrata, guarda, sincroniza etiquetas y relanza la app si hay fecha de nacimiento.</p>
+
+                <h3>PDF / impresion</h3>
+                <p><code>APP.PDF.export()</code> no genera un PDF binario. Construye un arbol temporal en <code>#printRoot</code>, aplica clases de modo impresion y llama a <code>window.print()</code>. La salida final depende del dialogo de impresion del navegador.</p>
+                <p>Los meses se clonan desde el calendario vivo cuando existen. Si no existen, se generan con <code>APP.UI.buildMonthCard(month, false)</code>. Antes de imprimir se eliminan ids y tooltips de los clones.</p>
+            </section>
+
+            <section id="extender">
+                <h2>Como extender la aplicacion</h2>
+                <h3>Anadir una nueva herramienta</h3>
+                <ol>
+                    <li>Anade el id en <code>APP_ALLOWED_TOOLS</code>.</li>
+                    <li>Anade el boton correspondiente en <code>index.html</code> con <code>data-tool</code> o id <code>btn_...</code>.</li>
+                    <li>Actualiza <code>APP.Events.checkToolActive()</code> y <code>APP.Events.applyTool()</code>.</li>
+                    <li>Actualiza <code>APP.UI.applyCellStyles()</code>, tooltips y dashboard si la nueva marca debe verse o contarse.</li>
+                    <li>Incluye normalizacion en <code>APP.State.normalizeData()</code> si introduces nuevas formas de datos.</li>
+                </ol>
+
+                <h3>Cambiar reglas legales</h3>
+                <ol>
+                    <li>Actualiza <code>AGENTS.md</code> con el nuevo contexto y fechas concretas.</li>
+                    <li>Actualiza constantes en <code>js/config.js</code>.</li>
+                    <li>Actualiza festivos base en <code>js/holidays.js</code> o carga manual en la app si son excepcionales.</li>
+                    <li>Revisa <code>APP.Logic.calculateLactation()</code> y <code>APP.Wizard.fillCategoryCascada()</code>.</li>
+                    <li>Exporta e importa un JSON antiguo para verificar compatibilidad.</li>
+                </ol>
+
+                <h3>Anadir una nueva categoria al asistente</h3>
+                <ol>
+                    <li>Anade la categoria a <code>APP_PRIORITY_ORDER</code>.</li>
+                    <li>Define dias y comportamiento de salto en <code>fillCategoryCascada()</code>.</li>
+                    <li>Revisa <code>updateMetrics()</code> y <code>updateDashboard()</code>.</li>
+                    <li>Define estilos de celda e impresion.</li>
+                </ol>
+            </section>
+
+            <section id="pruebas">
+                <h2>Pruebas manuales recomendadas</h2>
+                <p>No hay una suite automatizada en el repositorio. Antes de cerrar un cambio funcional, valida estos flujos en navegador:</p>
+                <ul>
+                    <li>Crear calendario con fecha de nacimiento y verificar 42 dias obligatorios.</li>
+                    <li>Pintar y borrar permisos de ambos progenitores con clic, arrastre y doble clic.</li>
+                    <li>Editar festivos desde clic derecho, modo edicion y tabla de configuracion.</li>
+                    <li>Marcar un progenitor como docente y ejecutar el asistente con lactancia laborable y natural.</li>
+                    <li>Exportar JSON, resetear, importar JSON y comprobar que las marcas se conservan.</li>
+                    <li>Lanzar exportacion PDF y revisar que aparecen meses relevantes, leyenda y festivos.</li>
+                    <li>Abrir la guia local y el panel de IA para comprobar que el modal compartido queda usable.</li>
+                </ul>
+            </section>
+
+            <section id="riesgos">
+                <h2>Riesgos y convenciones</h2>
+                <ul>
+                    <li>El orden de scripts es fragil. Si migras a modulos ES, hazlo como cambio dedicado.</li>
+                    <li>Las fechas se manejan con <code>Date</code> local y cadenas <code>YYYY-MM-DD</code>. Evita mezclar UTC salvo que revises todo el flujo.</li>
+                    <li>El repositorio usa textos mayoritariamente sin acentos para evitar problemas de codificacion. Mantener ASCII reduce diffs rotos.</li>
+                    <li><code>scripts.js</code> puede contener logica historica. Antes de eliminarlo o tocarlo, confirma si <code>index.html</code> o algun entorno externo lo sigue usando.</li>
+                    <li>Los festivos escolares son aproximados; para usos legales conviene contrastar la fuente oficial del curso afectado.</li>
+                    <li>La exportacion PDF depende de CSS de impresion y del navegador. Cambios visuales del calendario pueden afectar el PDF.</li>
+                </ul>
+            </section>
+        </div>
+    </main>
+</body>
+</html>

@@ -165,13 +165,15 @@ APP.PDF = {
                 <li class="print-legend-inline-item"><span class="print-swatch print-swatch--mandatory"></span><span>6 semanas obligatorias</span></li>
                 <li class="print-legend-inline-item"><span class="print-swatch print-band-bottom print-band-mom"></span><span>Semanas madre</span></li>
                 <li class="print-legend-inline-item"><span class="print-swatch print-band-top print-band-dad"></span><span>Semanas padre</span></li>
+                <li class="print-legend-inline-item"><span class="print-swatch" style="background:#f59e0b;border-radius:4px;"></span><span>Semanas flexibles (hasta 8 anos)</span></li>
                 <li class="print-legend-inline-item"><span class="print-swatch print-band-bottom print-band-lactation"></span><span>Lactancia</span></li>
                 <li class="print-legend-inline-item"><span class="print-swatch print-band-bottom print-band-vac-bottom"></span><span>Vacaciones madre</span></li>
                 <li class="print-legend-inline-item"><span class="print-swatch print-band-top print-band-vac-top"></span><span>Vacaciones padre</span></li>
+                <li class="print-legend-inline-item"><span class="print-swatch" style="background:#14b8a6;border-radius:4px;"></span><span>Otros permisos</span></li>
                 <li class="print-legend-inline-item"><span class="print-swatch print-swatch--nat"></span><span>Festivo nacional/autonomico</span></li>
                 <li class="print-legend-inline-item"><span class="print-swatch print-swatch--mom-local"></span><span>Festivo local madre</span></li>
                 <li class="print-legend-inline-item"><span class="print-swatch print-swatch--dad-local"></span><span>Festivo local padre</span></li>
-                <li class="print-legend-inline-item"><span class="print-swatch print-swatch--school"></span><span>Vacaciones escolares</span></li>
+                <li class="print-legend-inline-item"><span class="print-swatch print-swatch--school"></span><span>Periodo no lectivo</span></li>
                 <li class="print-legend-inline-item"><span class="print-swatch print-swatch--weekend"></span><span>Fin de semana</span></li>
             </ul>
         `;

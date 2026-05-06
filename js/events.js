@@ -51,10 +51,17 @@ APP.Events = {
     },
 
     setTool(tool) {
+        // Si es herramienta 'other', pedir tipo de permiso al usuario
+        if (tool === 'mom_other' || tool === 'dad_other') {
+            const label = prompt('Indica el tipo de permiso (ej: Matrimonio, Mudanza, Excedencia, Asuntos propios...):');
+            if (!label || !label.trim()) return;
+            APP.State.currentOtherLabel = label.trim();
+        }
+
         APP.State.currentTool = APP.State.normalizeCurrentTool(tool);
 
         document.querySelectorAll('.tool-btn').forEach((button) => {
-            button.classList.remove('active', 'ring-2', 'ring-offset-2', 'shadow-lg', 'ring-purple-600', 'ring-blue-600', 'ring-slate-300');
+            button.classList.remove('active', 'ring-2', 'ring-offset-2', 'shadow-lg', 'ring-purple-600', 'ring-blue-600', 'ring-teal-500', 'ring-slate-300');
             button.classList.add('shadow-sm');
         });
 
@@ -200,15 +207,27 @@ APP.Events = {
         } else {
             const role = t.startsWith('mom') ? 'm' : 'f';
             const type = t.split('_')[1];
-            if (turnOn) d[role] = type;
-            else if (d[role] === type) delete d[role];
+            if (turnOn) {
+                d[role] = type;
+                // Si es 'other', guardar la etiqueta descriptiva
+                if (type === 'other' && APP.State.currentOtherLabel) {
+                    if (!d.otherLabels) d.otherLabels = {};
+                    d.otherLabels[role] = APP.State.currentOtherLabel;
+                }
+            } else if (d[role] === type) {
+                delete d[role];
+                if (d.otherLabels) {
+                    delete d.otherLabels[role];
+                    if (Object.keys(d.otherLabels).length === 0) delete d.otherLabels;
+                }
+            }
         }
 
         const holidays = APP.Utils.normalizeHolidayArray(d.holidays);
         if (holidays.length > 0) d.holidays = holidays;
         else delete d.holidays;
 
-        if (!d.m && !d.f && !d.holidays) delete APP.State.data[ds];
+        if (!d.m && !d.f && !d.holidays && !d.otherLabels) delete APP.State.data[ds];
 
         const cell = document.getElementById(`c-${ds}`);
         if (cell) APP.UI.applyCellStyles(cell, ds);

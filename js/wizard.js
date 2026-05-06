@@ -40,17 +40,20 @@ APP.Wizard = {
     },
 
     renderStep1(container) {
+        const limits = APP.Logic.getPlanLimits();
+        const isMono = APP.State.familyType === 'monoparental';
         container.innerHTML = `
             <div class="p-8">
                 <h3 class="text-2xl font-bold text-slate-900 mb-6">Configuracion de periodos</h3>
 
-                <div class="grid grid-cols-2 gap-8">
+                <div class="grid ${isMono ? 'grid-cols-1 max-w-md mx-auto' : 'grid-cols-2'} gap-8">
                     <div class="space-y-6 p-6 bg-purple-50 rounded-3xl border border-purple-100">
-                        <p class="text-[10px] font-black text-purple-400 uppercase tracking-widest">Madre</p>
+                        <p class="text-[10px] font-black text-purple-400 uppercase tracking-widest">${isMono ? 'Progenitor' : 'Madre'}</p>
                         <div>
-                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-2">Semanas extra (0-8)</label>
-                            <input type="range" id="wizMomExtra" min="0" max="8" value="${APP.State.parents.mom.extraWeeks}" class="w-full h-1.5 bg-purple-200 rounded-lg accent-purple-600">
-                            <p class="text-center text-[10px] font-bold text-purple-600 mt-2" id="valMomEx">${APP.State.parents.mom.extraWeeks} sem.</p>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-2">Semanas flexibles adicionales (0-8)</label>
+                            <p class="text-[9px] text-slate-400 mb-2">Base: ${limits.flexibleWeeks} sem. Añade mas por parto multiple, discapacidad, etc.</p>
+                            <input type="range" id="wizMomFlexExtra" min="0" max="8" value="${APP.State.parents.mom.extraWeeks}" class="w-full h-1.5 bg-purple-200 rounded-lg accent-purple-600">
+                            <p class="text-center text-[10px] font-bold text-purple-600 mt-2" id="valMomFlexExtra">${APP.State.parents.mom.extraWeeks} sem. adicionales (total flex: ${limits.flexibleWeeks + APP.State.parents.mom.extraWeeks})</p>
                         </div>
                         <div>
                             <label class="block text-[10px] font-bold text-slate-400 uppercase mb-2">Dias vacaciones</label>
@@ -62,12 +65,14 @@ APP.Wizard = {
                         </label>
                     </div>
 
+                    ${isMono ? '' : `
                     <div class="space-y-6 p-6 bg-blue-50 rounded-3xl border border-blue-100">
                         <p class="text-[10px] font-black text-blue-400 uppercase tracking-widest">Padre</p>
                         <div>
-                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-2">Semanas extra (0-8)</label>
-                            <input type="range" id="wizDadExtra" min="0" max="8" value="${APP.State.parents.dad.extraWeeks}" class="w-full h-1.5 bg-blue-200 rounded-lg accent-blue-600">
-                            <p class="text-center text-[10px] font-bold text-blue-600 mt-2" id="valDadEx">${APP.State.parents.dad.extraWeeks} sem.</p>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase mb-2">Semanas flexibles adicionales (0-8)</label>
+                            <p class="text-[9px] text-slate-400 mb-2">Base: ${limits.flexibleWeeks} sem. Añade mas por parto multiple, discapacidad, etc.</p>
+                            <input type="range" id="wizDadFlexExtra" min="0" max="8" value="${APP.State.parents.dad.extraWeeks}" class="w-full h-1.5 bg-blue-200 rounded-lg accent-blue-600">
+                            <p class="text-center text-[10px] font-bold text-blue-600 mt-2" id="valDadFlexExtra">${APP.State.parents.dad.extraWeeks} sem. adicionales (total flex: ${limits.flexibleWeeks + APP.State.parents.dad.extraWeeks})</p>
                         </div>
                         <div>
                             <label class="block text-[10px] font-bold text-slate-400 uppercase mb-2">Dias vacaciones</label>
@@ -78,6 +83,7 @@ APP.Wizard = {
                             <span>Vacaciones en dias naturales</span>
                         </label>
                     </div>
+                    `}
                 </div>
 
                 <div class="mt-8 flex justify-end gap-3">
@@ -89,21 +95,25 @@ APP.Wizard = {
 
         const bindRange = (id, valueId, parentId) => {
             const element = document.getElementById(id);
+            if (!element) return;
             element.oninput = (e) => {
-                document.getElementById(valueId).innerText = `${e.target.value} sem.`;
-                APP.State.parents[parentId].extraWeeks = parseInt(e.target.value, 10);
+                const val = parseInt(e.target.value, 10);
+                document.getElementById(valueId).innerText = `${val} sem. adicionales (total flex: ${limits.flexibleWeeks + val})`;
+                APP.State.parents[parentId].extraWeeks = val;
                 APP.State.save();
             };
         };
 
-        bindRange('wizMomExtra', 'valMomEx', 'mom');
-        bindRange('wizDadExtra', 'valDadEx', 'dad');
+        bindRange('wizMomFlexExtra', 'valMomFlexExtra', 'mom');
+        bindRange('wizDadFlexExtra', 'valDadFlexExtra', 'dad');
 
         document.getElementById('btnWizStep2').onclick = () => {
             APP.State.parents.mom.vacations = parseInt(document.getElementById('wizMomVac').value, 10) || 0;
-            APP.State.parents.dad.vacations = parseInt(document.getElementById('wizDadVac').value, 10) || 0;
             APP.State.parents.mom.vacationMode = document.getElementById('wizMomVacNatural').checked ? 'natural' : 'working';
-            APP.State.parents.dad.vacationMode = document.getElementById('wizDadVacNatural').checked ? 'natural' : 'working';
+            if (!isMono) {
+                APP.State.parents.dad.vacations = parseInt(document.getElementById('wizDadVac')?.value, 10) || 0;
+                APP.State.parents.dad.vacationMode = document.getElementById('wizDadVacNatural')?.checked ? 'natural' : 'working';
+            }
             APP.State.save();
             this.step = 2;
             this.render();
@@ -366,8 +376,12 @@ APP.Wizard = {
 
         if (cat === 'vol') {
             daysToFill = baseLimits.voluntaryWeeks * 7;
+        } else if (cat === 'flex') {
+            // Las flexibles = base config + extra (parto múltiple, etc.)
+            daysToFill = (baseLimits.flexibleWeeks + parentObj.extraWeeks) * 7;
         } else if (cat === 'ex') {
-            daysToFill = parentObj.extraWeeks * 7;
+            // Legacy: si alguien tiene ex en la cascada, se trata como flex extra
+            daysToFill = 0;
         } else if (cat === 'vac') {
             daysToFill = parentObj.vacations;
             skipHolidays = parentObj.vacationMode !== 'natural';
@@ -446,8 +460,11 @@ APP.Wizard = {
         const birth = new Date(APP.State.birthDate);
         const mandatoryEnd = APP.Utils.addDays(birth, 42);
         let chainPointer = new Date(mandatoryEnd);
+        const isMono = APP.State.familyType === 'monoparental';
 
         APP.State.settings.priorityOrder.forEach((item) => {
+            // En modo monoparental, saltar items del segundo progenitor
+            if (isMono && item.id.startsWith('f_')) return;
             chainPointer = this.fillCategoryCascada(data, item.id, chainPointer, selections, teacherPrompts);
         });
 

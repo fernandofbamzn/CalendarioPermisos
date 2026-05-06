@@ -1,29 +1,57 @@
 /**
  * MOTOR DE FESTIVOS
+ *
+ * Festivos automaticos: nacionales (BOE) y autonomicos Aragon (BOA).
+ * Festivos locales: el usuario debe añadirlos manualmente.
+ *
+ * FUENTES OFICIALES:
+ * - Nacional: BOE, Resolucion anual de fiestas laborales
+ *   https://www.boe.es (buscar "fiestas laborales" del año correspondiente)
+ * - Aragon: BOA, Calendario laboral
+ *   https://www.aragon.es/trabajo-y-relaciones-laborales/calendario-laboral
+ * - Locales (2 por municipio): BOP provincial o bando del ayuntamiento
+ *   Huesca: https://bop.dphuesca.es
+ *   Zaragoza: https://bop.dpz.es
+ *   Teruel: https://236ws.dpteruel.es/bop
+ * - Calendario escolar (periodos no lectivos): DGA - Departamento de Educacion
+ *   https://educa.aragon.es/calendario-escolar
+ *
+ * NOTA IMPORTANTE:
+ * Los periodos no lectivos (vacaciones escolares) NO son vacaciones laborales.
+ * Son relevantes para docentes porque determinan los dias de trabajo efectivo,
+ * pero no reducen el derecho a lactancia acumulada.
  */
 window.APP = window.APP || {};
 
 APP.Holidays = {
-    // Festivos nacionales de Espana (fijos) y especificos
+    // Festivos nacionales fijos de Espana (BOE)
+    // Estos se aplican automaticamente cada año
     fixed: {
-        '01-01': { type: 'nat', name: 'Ano Nuevo' },
-        '01-06': { type: 'nat', name: 'Dia de Reyes' },
+        '01-01': { type: 'nat', name: 'Año Nuevo' },
+        '01-06': { type: 'nat', name: 'Epifania del Señor' },
         '05-01': { type: 'nat', name: 'Dia del Trabajo' },
-        '08-15': { type: 'nat', name: 'Asuncion' },
-        '10-12': { type: 'nat', name: 'Fiesta del Pilar' },
+        '08-15': { type: 'nat', name: 'Asuncion de la Virgen' },
+        '10-12': { type: 'nat', name: 'Fiesta Nacional de España' },
         '11-01': { type: 'nat', name: 'Todos los Santos' },
         '12-06': { type: 'nat', name: 'Dia de la Constitucion' },
         '12-08': { type: 'nat', name: 'Inmaculada Concepcion' },
-        '12-25': { type: 'nat', name: 'Navidad' },
-        '12-24': { type: 'f_loc', name: 'Nochebuena', shiftIfSunday: false },
-        '12-31': { type: 'f_loc', name: 'Nochevieja', shiftIfSunday: false }
+        '12-25': { type: 'nat', name: 'Natividad del Señor' }
     },
 
-    // Autonomicos
+    // Festivos autonomicos de Aragon (BOA)
     regional: {
         Aragon: {
-            '04-23': { type: 'nat', name: 'San Jorge' }
+            '04-23': { type: 'nat', name: 'Dia de Aragon (San Jorge)' }
         }
+    },
+
+    // Periodos no lectivos escolares aproximados.
+    // ATENCION: estos son orientativos. El calendario escolar oficial
+    // se publica anualmente en el BOA por el Departamento de Educacion del Gobierno de Aragon.
+    // El usuario debe verificar y ajustar segun el calendario oficial del curso.
+    schoolBreakConfig: {
+        christmas: { startDay: 23, startMonth: 11, endDay: 7, endMonth: 0 },
+        holyWeek: { daysBeforeEaster: [6, 5, 4], afterEaster: [1] }
     },
 
     addHoliday(target, dateStr, holiday) {
@@ -31,19 +59,20 @@ APP.Holidays = {
         target[dateStr] = APP.Utils.upsertHoliday(target[dateStr], holiday);
     },
 
-    // Aplica el traslado general al lunes cuando un festivo cae en domingo.
+    // Traslado al lunes cuando un festivo cae en domingo (regla general).
+    // NOTA: El traslado real depende de la resolucion anual del BOE.
     applyShiftIfSunday(year, monthDay, holidayObj) {
         const [month, day] = monthDay.split('-').map(Number);
         const date = new Date(year, month - 1, day);
-        
+
         if (holidayObj.shiftIfSunday !== false && date.getDay() === 0) {
             date.setDate(date.getDate() + 1);
             return {
                 dateStr: APP.Utils.formatDate(date),
-                holiday: { ...holidayObj, name: `${holidayObj.name} (trasladada)` }
+                holiday: { ...holidayObj, name: `${holidayObj.name} (trasladado)` }
             };
         }
-        
+
         return {
             dateStr: APP.Utils.formatDate(date),
             holiday: holidayObj
@@ -60,47 +89,51 @@ APP.Holidays = {
     getHolidaysForYear(year) {
         const hols = {};
 
-        // Festivos fijos (nacionales y particulares)
+        // Festivos fijos nacionales
         Object.entries(this.fixed).forEach(([monthDay, holidayObj]) => {
             const { dateStr, holiday } = this.applyShiftIfSunday(year, monthDay, holidayObj);
             this.addHoliday(hols, dateStr, holiday);
         });
 
-        // Festivos autonomicos
+        // Festivos autonomicos Aragon
         Object.entries(this.regional.Aragon).forEach(([monthDay, holidayObj]) => {
             const { dateStr, holiday } = this.applyShiftIfSunday(year, monthDay, holidayObj);
             this.addHoliday(hols, dateStr, holiday);
         });
 
-        // Semana Santa calculada (movil)
+        // Semana Santa (festivos nacionales calculados)
         const easter = this.getEaster(year);
-        const holyMonday = APP.Utils.addDays(easter, -6);
-        const holyTuesday = APP.Utils.addDays(easter, -5);
-        const holyWednesday = APP.Utils.addDays(easter, -4);
         const thu = APP.Utils.addDays(easter, -3);
         const fri = APP.Utils.addDays(easter, -2);
-        const easterMonday = APP.Utils.addDays(easter, 1);
 
-        this.addHoliday(hols, APP.Utils.formatDate(holyMonday), { type: 'school', name: 'Semana Santa' });
-        this.addHoliday(hols, APP.Utils.formatDate(holyTuesday), { type: 'school', name: 'Semana Santa' });
-        this.addHoliday(hols, APP.Utils.formatDate(holyWednesday), { type: 'school', name: 'Semana Santa' });
         this.addHoliday(hols, APP.Utils.formatDate(thu), { type: 'nat', name: 'Jueves Santo' });
         this.addHoliday(hols, APP.Utils.formatDate(fri), { type: 'nat', name: 'Viernes Santo' });
-        this.addHoliday(hols, APP.Utils.formatDate(easterMonday), { type: 'both_loc', name: 'Lunes de Pascua' });
 
         return hols;
     },
 
-    // Vacaciones escolares aproximadas
-    getSchoolHolidays(year) {
+    // Periodos no lectivos escolares (aproximados, verificar con calendario oficial DGA)
+    getSchoolBreaks(year) {
         const hols = {};
 
-        for (let d = new Date(year, 11, 23); d <= new Date(year, 11, 31); d.setDate(d.getDate() + 1)) {
-            this.addHoliday(hols, APP.Utils.formatDate(d), { type: 'school', name: 'Vacaciones de Navidad' });
-        }
+        // Semana Santa escolar: dias no lectivos alrededor de los festivos
+        const easter = this.getEaster(year);
+        this.schoolBreakConfig.holyWeek.daysBeforeEaster.forEach((offset) => {
+            const d = APP.Utils.addDays(easter, -offset);
+            this.addHoliday(hols, APP.Utils.formatDate(d), { type: 'school', name: 'Periodo no lectivo (Semana Santa)' });
+        });
+        this.schoolBreakConfig.holyWeek.afterEaster.forEach((offset) => {
+            const d = APP.Utils.addDays(easter, offset);
+            this.addHoliday(hols, APP.Utils.formatDate(d), { type: 'school', name: 'Periodo no lectivo (Semana Santa)' });
+        });
 
-        for (let d = new Date(year, 0, 1); d <= new Date(year, 0, 7); d.setDate(d.getDate() + 1)) {
-            this.addHoliday(hols, APP.Utils.formatDate(d), { type: 'school', name: 'Vacaciones de Navidad' });
+        // Navidad: periodo no lectivo aproximado
+        const cfg = this.schoolBreakConfig.christmas;
+        for (let d = new Date(year, cfg.startMonth, cfg.startDay); d <= new Date(year, 11, 31); d.setDate(d.getDate() + 1)) {
+            this.addHoliday(hols, APP.Utils.formatDate(d), { type: 'school', name: 'Periodo no lectivo (Navidad)' });
+        }
+        for (let d = new Date(year, cfg.endMonth, 1); d <= new Date(year, cfg.endMonth, cfg.endDay); d.setDate(d.getDate() + 1)) {
+            this.addHoliday(hols, APP.Utils.formatDate(d), { type: 'school', name: 'Periodo no lectivo (Navidad)' });
         }
 
         return hols;
@@ -128,7 +161,7 @@ APP.Holidays = {
         const startYear = new Date(birthDate).getFullYear();
         for (let year = startYear; year <= startYear + 2; year++) {
             this.mergeIntoData(data, this.getHolidaysForYear(year));
-            this.mergeIntoData(data, this.getSchoolHolidays(year));
+            this.mergeIntoData(data, this.getSchoolBreaks(year));
         }
     },
 
@@ -138,7 +171,7 @@ APP.Holidays = {
 
         const temp = {};
         this.mergeIntoData(temp, this.getHolidaysForYear(year));
-        this.mergeIntoData(temp, this.getSchoolHolidays(year));
+        this.mergeIntoData(temp, this.getSchoolBreaks(year));
         return APP.Utils.normalizeHolidayArray(temp[dateStr]?.holidays);
     },
 

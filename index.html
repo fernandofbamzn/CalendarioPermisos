@@ -41,7 +41,7 @@
                 </div>
                 <div>
                     <h1 class="text-xl font-bold tracking-tight text-slate-900">Planificador Familiar</h1>
-                    <p class="text-[10px] font-bold text-indigo-500 uppercase tracking-widest">Aragon - Permiso base de 17 semanas</p>
+                    <p class="text-[10px] font-bold text-indigo-500 uppercase tracking-widest">RDL 9/2025 - Permiso de 19 semanas</p>
                 </div>
             </div>
 
@@ -107,6 +107,28 @@
                     </svg>
                 </button>
 
+                <div class="h-8 w-px bg-slate-200"></div>
+
+                <button id="btnEmailSummary"
+                    class="icon-btn bg-white border border-slate-200 text-indigo-600 p-2 rounded-xl text-xs font-bold hover:bg-indigo-50 transition-all"
+                    title="Enviar resumen por email">
+                    <span class="sr-only">Enviar resumen</span>
+                    <svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="m22 2-7 20-4-9-9-4Z" />
+                        <path d="M22 2 11 13" />
+                    </svg>
+                </button>
+
+                <button id="btnEmailBackup"
+                    class="icon-btn bg-white border border-slate-200 text-slate-700 p-2 rounded-xl text-xs font-bold hover:bg-slate-50 transition-all"
+                    title="Enviar copia de seguridad (JSON) por email">
+                    <span class="sr-only">Enviar Backup</span>
+                    <svg viewBox="0 0 24 24" class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <rect width="20" height="16" x="2" y="4" rx="2" />
+                        <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                    </svg>
+                </button>
+
                 <div class="w-px h-8 bg-slate-200 mx-2"></div>
 
                 <button id="btnWizard"
@@ -133,16 +155,7 @@
                     </svg>
                     Guia
                 </button>
-                <button id="btnGemini"
-                    class="bg-white border border-slate-200 text-slate-700 px-4 py-2 rounded-xl text-xs font-bold hover:bg-slate-50 transition-all flex items-center gap-2">
-                    <svg viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M9 3h6l4 4v10l-4 4H9l-4-4V7z" />
-                        <path d="M9 9h6" />
-                        <path d="M9 13h6" />
-                        <path d="M12 9v8" />
-                    </svg>
-                    IA
-                </button>
+
             </div>
         </div>
     </header>
@@ -167,7 +180,7 @@
                 Para empezar a planificar vuestra conciliacion, introduce la fecha del nacimiento arriba.
             </p>
             <p class="mt-4 text-sm font-medium text-indigo-600 bg-indigo-50 px-4 py-2 rounded-full inline-block">
-                Configurado con 17 semanas totales por progenitor
+                Configurado con 19 semanas totales por progenitor (RDL 9/2025)
             </p>
         </div>
 
@@ -183,7 +196,7 @@
                     <div class="text-[10px] font-bold text-purple-500 uppercase mb-2">Vuelta madre</div>
                     <div class="text-2xl font-black text-slate-900" id="metric_mom_return">--</div>
                 </div>
-                <div class="dashboard-card glass p-5 rounded-3xl">
+                <div id="dadDashboardCard" class="dashboard-card glass p-5 rounded-3xl">
                     <div class="text-[10px] font-bold text-blue-500 uppercase mb-2">Vuelta padre</div>
                     <div class="text-2xl font-black text-slate-900" id="metric_dad_return">--</div>
                 </div>
@@ -193,6 +206,8 @@
                     <div class="text-[9px] text-slate-400 mt-1 italic">Menos solape = mas cobertura</div>
                 </div>
             </div>
+
+            <div id="warningBox" class="hidden bg-amber-50 border border-amber-200 rounded-2xl p-4 mb-4 no-print animate-fade"></div>
         </div>
 
         <div id="stickyToolbar"
@@ -207,6 +222,12 @@
                                 <div class="absolute inset-x-3 bottom-2 h-1 bg-purple-600 rounded-full"></div>
                                 <span class="text-[10px] font-bold">Semanas</span>
                                 <span class="text-[9px] text-slate-400" id="count_mom_vol">--</span>
+                            </button>
+                            <button id="btn_mom_flex"
+                                class="tool-btn bg-white p-3 rounded-xl w-24 flex flex-col items-center shadow-sm relative overflow-hidden">
+                                <div class="absolute inset-x-3 bottom-2 h-1 bg-amber-500 rounded-full"></div>
+                                <span class="text-[10px] font-bold">Flexible</span>
+                                <span class="text-[9px] text-slate-400" id="count_mom_flex">--</span>
                             </button>
                             <div class="relative">
                                 <button id="btn_mom_lac"
@@ -239,13 +260,20 @@
                                 title="Festivo local madre">
                                 <span class="text-xs border-2 border-purple-500 rounded-full w-6 h-6 flex items-center justify-center font-bold">F</span>
                             </button>
+                            <button id="btn_mom_other"
+                                class="tool-btn bg-teal-50 border border-teal-200 text-teal-700 p-3 rounded-xl w-24 flex flex-col items-center shadow-sm relative overflow-hidden"
+                                title="Otros permisos madre">
+                                <div class="absolute inset-x-3 bottom-2 h-1 bg-teal-500 rounded-full"></div>
+                                <span class="text-[10px] font-bold">Otros</span>
+                                <span class="text-[9px] text-slate-400" id="count_mom_other">--</span>
+                            </button>
                         </div>
                     </div>
                 </div>
 
                 <div class="h-10 w-px bg-slate-100 hidden lg:block"></div>
 
-                <div class="flex items-center gap-4">
+                <div id="dadToolbarSection" class="flex items-center gap-4">
                     <div class="flex flex-col items-center">
                         <div class="text-[10px] font-black uppercase text-blue-400 mb-1" id="label_dad_name">Padre</div>
                         <div class="flex gap-2 items-stretch">
@@ -254,6 +282,12 @@
                                 <div class="absolute inset-x-3 top-2 h-1 bg-blue-600 rounded-full"></div>
                                 <span class="text-[10px] font-bold">Semanas</span>
                                 <span class="text-[9px] text-slate-400" id="count_dad_vol">--</span>
+                            </button>
+                            <button id="btn_dad_flex"
+                                class="tool-btn bg-white p-3 rounded-xl w-24 flex flex-col items-center shadow-sm relative overflow-hidden">
+                                <div class="absolute inset-x-3 top-2 h-1 bg-amber-500 rounded-full"></div>
+                                <span class="text-[10px] font-bold">Flexible</span>
+                                <span class="text-[9px] text-slate-400" id="count_dad_flex">--</span>
                             </button>
                             <div class="relative">
                                 <button id="btn_dad_lac"
@@ -285,6 +319,13 @@
                                 class="tool-btn bg-blue-50 border border-blue-200 text-blue-700 p-3 rounded-xl w-14 flex flex-col items-center justify-center shadow-sm"
                                 title="Festivo local padre">
                                 <span class="text-xs border-2 border-blue-500 rounded-full w-6 h-6 flex items-center justify-center font-bold">F</span>
+                            </button>
+                            <button id="btn_dad_other"
+                                class="tool-btn bg-teal-50 border border-teal-200 text-teal-700 p-3 rounded-xl w-24 flex flex-col items-center shadow-sm relative overflow-hidden"
+                                title="Otros permisos padre">
+                                <div class="absolute inset-x-3 top-2 h-1 bg-teal-500 rounded-full"></div>
+                                <span class="text-[10px] font-bold">Otros</span>
+                                <span class="text-[9px] text-slate-400" id="count_dad_other">--</span>
                             </button>
                         </div>
                     </div>
@@ -334,7 +375,7 @@
     <script src="js/main.js"></script>
     <script src="js/docs.js"></script>
     <script src="js/wizard.js"></script>
-    <script src="js/gemini.js"></script>
+
 </body>
 
 </html>

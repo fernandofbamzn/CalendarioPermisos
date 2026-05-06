@@ -27,11 +27,15 @@ APP.UI = {
             },
             counts: {
                 m_vol: document.getElementById('count_mom_vol'),
+                m_flex: document.getElementById('count_mom_flex'),
                 m_lac: document.getElementById('count_mom_lac'),
                 m_vac: document.getElementById('count_mom_vac'),
+                m_other: document.getElementById('count_mom_other'),
                 f_vol: document.getElementById('count_dad_vol'),
+                f_flex: document.getElementById('count_dad_flex'),
                 f_lac: document.getElementById('count_dad_lac'),
-                f_vac: document.getElementById('count_dad_vac')
+                f_vac: document.getElementById('count_dad_vac'),
+                f_other: document.getElementById('count_dad_other')
             }
         };
 
@@ -155,14 +159,18 @@ APP.UI = {
             info.push('Permiso obligatorio (ambos)');
         } else {
             if (m === 'vol') info.push(`Permiso voluntario ${APP.State.parents.mom.name}`);
+            if (m === 'flex') info.push(`Semanas flexibles ${APP.State.parents.mom.name}`);
             if (m === 'ex') info.push(`Semanas extra ${APP.State.parents.mom.name}`);
             if (m === 'vac') info.push(`Vacaciones ${APP.State.parents.mom.name}`);
             if (m === 'lac') info.push(`Lactancia ${APP.State.parents.mom.name}`);
+            if (m === 'other') info.push(`${d.otherLabels?.m || 'Otro permiso'} ${APP.State.parents.mom.name}`);
 
             if (f === 'vol') info.push(`Permiso voluntario ${APP.State.parents.dad.name}`);
+            if (f === 'flex') info.push(`Semanas flexibles ${APP.State.parents.dad.name}`);
             if (f === 'ex') info.push(`Semanas extra ${APP.State.parents.dad.name}`);
             if (f === 'vac') info.push(`Vacaciones ${APP.State.parents.dad.name}`);
             if (f === 'lac') info.push(`Lactancia ${APP.State.parents.dad.name}`);
+            if (f === 'other') info.push(`${d.otherLabels?.f || 'Otro permiso'} ${APP.State.parents.dad.name}`);
         }
 
         if (info.length > 0) {
@@ -225,12 +233,16 @@ APP.UI = {
 
         if (!isEdit) {
             if (m === 'vol' || m === 'ex') this.appendLayer(el, 'absolute inset-x-0 bottom-0 h-1.5 bg-purple-600 rounded-b-lg');
+            if (m === 'flex') this.appendLayer(el, 'absolute inset-x-0 bottom-0 h-1.5 bg-amber-500 rounded-b-lg');
             if (m === 'vac') this.appendLayer(el, 'absolute inset-x-0 bottom-0 h-1.5 bg-purple-400 rounded-b-lg opacity-40');
             if (m === 'lac') this.appendLayer(el, 'absolute inset-x-0 bottom-0 h-1.5 bg-green-500 rounded-b-lg');
+            if (m === 'other') this.appendLayer(el, 'absolute inset-x-0 bottom-0 h-1.5 bg-teal-500 rounded-b-lg');
 
             if (f === 'vol' || f === 'ex') this.appendLayer(el, 'absolute inset-x-0 top-0 h-1.5 bg-blue-600 rounded-t-lg');
+            if (f === 'flex') this.appendLayer(el, 'absolute inset-x-0 top-0 h-1.5 bg-amber-500 rounded-t-lg');
             if (f === 'vac') this.appendLayer(el, 'absolute inset-x-0 top-0 h-1.5 bg-cyan-400 rounded-t-lg opacity-40');
             if (f === 'lac') this.appendLayer(el, 'absolute inset-x-0 top-0 h-1.5 bg-green-500 rounded-t-lg');
+            if (f === 'other') this.appendLayer(el, 'absolute inset-x-0 top-0 h-1.5 bg-teal-500 rounded-t-lg');
         }
 
         this.setCellTooltip(el, ds);
@@ -366,16 +378,40 @@ APP.UI = {
     updateDashboard() {
         const metrics = APP.Logic.updateMetrics();
         const limits = APP.Logic.getPlanLimits();
-        const momExtraText = metrics.counts.m_ex > 0 ? ` +${(metrics.counts.m_ex / 7).toFixed(1)} ex` : '';
-        const dadExtraText = metrics.counts.f_ex > 0 ? ` +${(metrics.counts.f_ex / 7).toFixed(1)} ex` : '';
+        const isMono = APP.State.familyType === 'monoparental';
+        const momFlexExtra = APP.State.parents.mom.extraWeeks || 0;
+        const dadFlexExtra = APP.State.parents.dad.extraWeeks || 0;
 
-        this.elements.counts.m_vol.innerText = `${(metrics.counts.m_vol / 7).toFixed(1)}/${limits.voluntaryWeeks} sem${momExtraText}`;
+        // Avisar si se exceden limites (sin bloquear)
+        const volLimitDays = limits.voluntaryWeeks * 7;
+        const momFlexLimit = limits.flexibleWeeks + momFlexExtra;
+        const dadFlexLimit = limits.flexibleWeeks + dadFlexExtra;
+
+        this.elements.counts.m_vol.innerText = `${(metrics.counts.m_vol / 7).toFixed(1)}/${limits.voluntaryWeeks} sem`;
+        this.elements.counts.m_vol.className = metrics.counts.m_vol > volLimitDays ? 'text-[9px] text-red-600 font-bold' : 'text-[9px] text-slate-500';
+        if (this.elements.counts.m_flex) {
+            this.elements.counts.m_flex.innerText = `${(metrics.counts.m_flex / 7).toFixed(1)}/${momFlexLimit} sem`;
+            this.elements.counts.m_flex.className = metrics.counts.m_flex > momFlexLimit * 7 ? 'text-[9px] text-red-600 font-bold' : 'text-[9px] text-slate-500';
+        }
         this.elements.counts.m_lac.innerText = `${metrics.counts.m_lac} d`;
         this.elements.counts.m_vac.innerText = `${metrics.counts.m_vac} d`;
+        if (this.elements.counts.m_other) {
+            this.elements.counts.m_other.innerText = `${metrics.counts.m_other} d`;
+        }
 
-        this.elements.counts.f_vol.innerText = `${(metrics.counts.f_vol / 7).toFixed(1)}/${limits.voluntaryWeeks} sem${dadExtraText}`;
-        this.elements.counts.f_lac.innerText = `${metrics.counts.f_lac} d`;
-        this.elements.counts.f_vac.innerText = `${metrics.counts.f_vac} d`;
+        if (!isMono) {
+            this.elements.counts.f_vol.innerText = `${(metrics.counts.f_vol / 7).toFixed(1)}/${limits.voluntaryWeeks} sem`;
+            this.elements.counts.f_vol.className = metrics.counts.f_vol > volLimitDays ? 'text-[9px] text-red-600 font-bold' : 'text-[9px] text-slate-500';
+            if (this.elements.counts.f_flex) {
+                this.elements.counts.f_flex.innerText = `${(metrics.counts.f_flex / 7).toFixed(1)}/${dadFlexLimit} sem`;
+                this.elements.counts.f_flex.className = metrics.counts.f_flex > dadFlexLimit * 7 ? 'text-[9px] text-red-600 font-bold' : 'text-[9px] text-slate-500';
+            }
+            this.elements.counts.f_lac.innerText = `${metrics.counts.f_lac} d`;
+            this.elements.counts.f_vac.innerText = `${metrics.counts.f_vac} d`;
+            if (this.elements.counts.f_other) {
+                this.elements.counts.f_other.innerText = `${metrics.counts.f_other} d`;
+            }
+        }
 
         if (metrics.lastDate > 0) {
             this.elements.metrics.coverage.innerText = APP.Utils.formatDisplay(metrics.lastDate);
@@ -387,7 +423,88 @@ APP.UI = {
         }
 
         this.elements.metrics.mom.innerText = metrics.mReturn ? APP.Utils.formatDisplay(APP.Utils.addDays(metrics.mReturn, 1)) : '--';
-        this.elements.metrics.dad.innerText = metrics.fReturn ? APP.Utils.formatDisplay(APP.Utils.addDays(metrics.fReturn, 1)) : '--';
+        if (!isMono) {
+            this.elements.metrics.dad.innerText = metrics.fReturn ? APP.Utils.formatDisplay(APP.Utils.addDays(metrics.fReturn, 1)) : '--';
+        }
         this.elements.metrics.overlap.innerText = `${metrics.counts.overlap} dias solapados`;
+
+        // Mostrar avisos de limites excedidos
+        const warningBox = document.getElementById('warningBox');
+        const warnings = APP.Logic.getWarnings();
+        if (warningBox) {
+            if (warnings.length > 0) {
+                warningBox.innerHTML = warnings.map((w) => `<p class="text-xs text-amber-700">${w}</p>`).join('');
+                warningBox.classList.remove('hidden');
+            } else {
+                warningBox.classList.add('hidden');
+            }
+        }
+
+        // Ocultar/mostrar secciones segun tipo de familia
+        const dadSection = document.getElementById('dadToolbarSection');
+        const dadDashboard = document.getElementById('dadDashboardCard');
+        if (dadSection) dadSection.classList.toggle('hidden', isMono);
+        if (dadDashboard) dadDashboard.classList.toggle('hidden', isMono);
+    },
+
+    sendSummaryEmail() {
+        if (!APP.State.birthDate) {
+            alert('Primero introduce una fecha de nacimiento.');
+            return;
+        }
+
+        const metrics = APP.Logic.updateMetrics();
+        const momName = APP.State.parents.mom.name || 'Madre';
+        const dadName = APP.State.parents.dad.name || 'Padre';
+        const birthStr = APP.Utils.formatDisplay(APP.State.birthDate);
+        const coverageStr = metrics.lastDate ? APP.Utils.formatDisplay(metrics.lastDate) : '--';
+        
+        const mReturn = metrics.mReturn ? APP.Utils.formatDisplay(APP.Utils.addDays(metrics.mReturn, 1)) : '--';
+        const fReturn = metrics.fReturn ? APP.Utils.formatDisplay(APP.Utils.addDays(metrics.fReturn, 1)) : '--';
+
+        const subject = `Resumen Planificacion Familiar - Nacimiento ${birthStr}`;
+        let body = `Hola,\n\nAquí tienes el resumen de la planificación familiar:\n\n`;
+        body += `📅 Fecha de nacimiento: ${birthStr}\n`;
+        body += `🛡️ Cobertura total hasta: ${coverageStr}\n\n`;
+        
+        body += `👩‍🏫 ${momName}:\n`;
+        body += `   - Vuelta al trabajo: ${mReturn}\n`;
+        body += `   - Semanas voluntarias: ${(metrics.counts.m_vol / 7).toFixed(1)}\n`;
+        body += `   - Días de lactancia: ${metrics.counts.m_lac}\n`;
+        body += `   - Días de vacaciones: ${metrics.counts.m_vac}\n\n`;
+
+        body += `👨‍🏫 ${dadName}:\n`;
+        body += `   - Vuelta al trabajo: ${fReturn}\n`;
+        body += `   - Semanas voluntarias: ${(metrics.counts.f_vol / 7).toFixed(1)}\n`;
+        body += `   - Días de lactancia: ${metrics.counts.f_lac}\n`;
+        body += `   - Días de vacaciones: ${metrics.counts.f_vac}\n\n`;
+
+        body += `⚠️ Días de solape: ${metrics.counts.overlap}\n\n`;
+        body += `Generado con el Planificador Familiar Premium.`;
+
+        const mailtoUrl = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        window.location.href = mailtoUrl;
+    },
+
+    sendBackupEmail() {
+        if (!APP.State.birthDate) {
+            alert('Primero introduce una fecha de nacimiento.');
+            return;
+        }
+
+        const data = APP.State.serialize(); // Obtenemos el objeto de estado actual
+        const jsonStr = JSON.stringify(data);
+        const birthStr = APP.Utils.formatDisplay(APP.State.birthDate);
+
+        const subject = `Backup Planificacion Familiar - ${birthStr}`;
+        let body = `Hola,\n\nEste correo contiene una copia de seguridad de tu planificación familiar en formato JSON. Puedes importarla de nuevo en la aplicación.\n\n`;
+        body += `Copia y pega el siguiente código en un archivo .json o úsalo directamente en la opción de importar:\n\n`;
+        body += `--- INICIO BACKUP ---\n`;
+        body += jsonStr;
+        body += `\n--- FIN BACKUP ---\n\n`;
+        body += `Generado con el Planificador Familiar Premium.`;
+
+        const mailtoUrl = `mailto:?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        window.location.href = mailtoUrl;
     }
 };

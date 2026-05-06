@@ -5,22 +5,26 @@ window.APP = window.APP || {};
 
 const APP_PRIORITY_ORDER = [
     { id: 'm_vol', label: 'Permiso Madre (Base)' },
+    { id: 'm_flex', label: 'Semanas Flexibles Madre' },
     { id: 'm_lac', label: 'Lactancia Madre' },
     { id: 'm_vac', label: 'Vacaciones Madre' },
     { id: 'f_vol', label: 'Permiso Padre (Base)' },
+    { id: 'f_flex', label: 'Semanas Flexibles Padre' },
     { id: 'f_lac', label: 'Lactancia Padre' },
-    { id: 'f_vac', label: 'Vacaciones Padre' },
-    { id: 'f_ex', label: 'Semanas Extra Padre' },
-    { id: 'm_ex', label: 'Semanas Extra Madre' }    
+    { id: 'f_vac', label: 'Vacaciones Padre' }
 ];
 
 const APP_ALLOWED_TOOLS = [
     'mom_vol',
+    'mom_flex',
     'mom_lac',
     'mom_vac',
+    'mom_other',
     'dad_vol',
+    'dad_flex',
     'dad_lac',
     'dad_vac',
+    'dad_other',
     'mom_hol',
     'dad_hol',
     'common_hol',
@@ -62,8 +66,9 @@ function createDefaultParents() {
 }
 
 APP.State = {
-    storageKey: 'planner_v8_state',
+    storageKey: 'planner_v9_state',
     birthDate: null,
+    familyType: 'biparental',
     currentTool: 'mom_vol',
     settings: createDefaultSettings(),
     parents: createDefaultParents(),
@@ -157,6 +162,7 @@ APP.State = {
     hydrate(parsed = {}) {
         const birthDate = parsed.birthDate ? new Date(parsed.birthDate) : null;
         this.birthDate = birthDate && !isNaN(birthDate.getTime()) ? birthDate : null;
+        this.familyType = (parsed.familyType === 'monoparental') ? 'monoparental' : 'biparental';
         this.currentTool = this.normalizeCurrentTool(parsed.currentTool);
         this.settings = this.normalizeSettings(parsed.settings);
         this.parents = this.normalizeParents(parsed.parents);
@@ -179,6 +185,7 @@ APP.State = {
     serialize() {
         return {
             birthDate: this.birthDate,
+            familyType: this.familyType,
             currentTool: this.currentTool,
             settings: this.normalizeSettings(this.settings),
             parents: this.normalizeParents(this.parents),
@@ -191,7 +198,14 @@ APP.State = {
     },
 
     load() {
-        const saved = localStorage.getItem(this.storageKey);
+        let saved = localStorage.getItem(this.storageKey);
+
+        // Migracion automatica desde v8
+        if (!saved) {
+            saved = localStorage.getItem('planner_v8_state');
+            if (saved) localStorage.removeItem('planner_v8_state');
+        }
+
         if (!saved) return false;
 
         try {
