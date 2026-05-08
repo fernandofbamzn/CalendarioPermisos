@@ -26,6 +26,22 @@ APP.Logic = {
         return lastVoluntaryDay;
     },
 
+    // Devuelve el ultimo dia con cualquier tipo de permiso asignado para un progenitor.
+    // Util para calcular la fecha real de reincorporacion (inicio de lactancia).
+    getLastLeaveDay(dataSource = APP.State.data, role) {
+        const roleKey = role === 'mom' ? 'm' : 'f';
+        let lastDay = null;
+
+        Object.keys(dataSource || {}).sort().forEach((ds) => {
+            const val = (dataSource[ds] || {})[roleKey];
+            if (val) {
+                lastDay = ds;
+            }
+        });
+
+        return lastDay;
+    },
+
     getHolidayImpact(ds, role, dataSource = APP.State.data) {
         const parent = role === 'mom' ? APP.State.parents.mom : APP.State.parents.dad;
         const holidays = APP.Utils.normalizeHolidayArray(dataSource[ds]?.holidays);
@@ -209,6 +225,35 @@ APP.Logic = {
         }
 
         return warnings;
+    },
+
+    // Calcula la fecha real de reincorporacion para un progenitor.
+    // Avanza desde el dia siguiente al ultimo permiso saltando fines de semana (si aplica),
+    // festivos legales y vacaciones escolares (si docente).
+    getReturnDate(role) {
+        const lastDay = this.getLastLeaveDay(APP.State.data, role);
+        if (!lastDay) return null;
+
+        const parent = role === 'mom' ? APP.State.parents.mom : APP.State.parents.dad;
+        let current = APP.Utils.addDays(new Date(lastDay), 1);
+
+        // Limite de seguridad para evitar bucles infinitos (max 60 dias buscando)
+        for (let i = 0; i < 60; i++) {
+            const ds = APP.Utils.formatDate(current);
+            const isWeekend = APP.Utils.isWeekend(current);
+            const impact = this.getHolidayImpact(ds, role);
+
+            let isNonWorking = false;
+            if (parent.weekendsAsHolidays && isWeekend) isNonWorking = true;
+            if (impact.isLegalHoliday) isNonWorking = true;
+            if (parent.isTeacher && impact.isSchoolBreak) isNonWorking = true;
+
+            if (!isNonWorking) return current;
+            current = APP.Utils.addDays(current, 1);
+        }
+
+        // Fallback: si tras 60 dias no encuentra laborable, devuelve el dia siguiente sin mas
+        return APP.Utils.addDays(new Date(lastDay), 1);
     },
 
     updateMetrics() {

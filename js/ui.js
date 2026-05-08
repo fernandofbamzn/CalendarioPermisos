@@ -272,16 +272,28 @@ APP.UI = {
     },
 
     openLactationCalc(role) {
-        const lastDay = APP.Logic.getLastVoluntaryDay(APP.State.data, role);
+        // Fecha por defecto: ultimo dia con cualquier permiso asignado (no solo voluntario).
+        const lastLeaveDay = APP.Logic.getLastLeaveDay(APP.State.data, role);
+        const lastVolDay = APP.Logic.getLastVoluntaryDay(APP.State.data, role);
 
-        if (!lastDay) {
-            alert('Primero marca las semanas voluntarias para calcular la lactancia.');
+        if (!lastLeaveDay && !lastVolDay) {
+            alert('Primero marca algun permiso en el calendario para calcular la lactancia.');
             return;
         }
 
+        const defaultStartRef = lastLeaveDay || lastVolDay;
+        this._renderLactationModal(role, defaultStartRef);
+    },
+
+    _renderLactationModal(role, startRefDate) {
         const parent = role === 'mom' ? APP.State.parents.mom : APP.State.parents.dad;
-        const res = APP.Logic.calculateLactation(lastDay, parent.hours, role);
+        const res = APP.Logic.calculateLactation(startRefDate, parent.hours, role);
         const lactationWindowText = parent.isTeacher ? '12 meses (docente)' : '9 meses';
+
+        // Datos informativos
+        const lastVolDay = APP.Logic.getLastVoluntaryDay(APP.State.data, role);
+        const lastLeaveDay = APP.Logic.getLastLeaveDay(APP.State.data, role);
+
         const includedRows = res.breakdown.includedDates.map((item) => `
             <div class="flex justify-between gap-4 py-2 border-b border-slate-100 last:border-b-0">
                 <span class="font-medium text-slate-700">${APP.Utils.formatDisplay(item.ds)}</span>
@@ -302,91 +314,26 @@ APP.UI = {
         container.innerHTML = `
             <div class="p-8 max-h-[90vh] overflow-y-auto no-scrollbar">
                 <h3 class="text-2xl font-bold text-slate-900 mb-2">Calculadora de lactancia</h3>
-                <p class="text-slate-500 mb-8 font-medium">Calculo basado en 1h/dia hasta los ${lactationWindowText}, empezando el dia siguiente al ultimo dia marcado como semanas voluntarias.</p>
+                <p class="text-slate-500 mb-8 font-medium">Calculo basado en 1h/dia hasta los ${lactationWindowText}. El computo empieza el dia siguiente a la fecha de referencia.</p>
 
                 <div class="space-y-6">
-                    <div class="grid md:grid-cols-2 xl:grid-cols-6 gap-4">
-                        <div class="p-5 bg-white rounded-2xl border border-slate-200">
-                            <p class="text-[10px] font-bold text-slate-400 uppercase">Ultimo dia voluntario</p>
-                            <p class="text-sm font-bold text-slate-900 mt-2">${APP.Utils.formatDisplay(lastDay)}</p>
-                        </div>
-                        <div class="p-5 bg-white rounded-2xl border border-slate-200">
-                            <p class="text-[10px] font-bold text-slate-400 uppercase">Inicio del computo</p>
-                            <p class="text-sm font-bold text-slate-900 mt-2">${APP.Utils.formatDisplay(res.breakdown.rangeStart)}</p>
-                        </div>
-                        <div class="p-5 bg-slate-50 rounded-2xl border border-slate-200">
-                            <p class="text-[10px] font-bold text-slate-400 uppercase">Rango analizado</p>
-                            <p class="text-sm font-bold text-slate-900 mt-2">${APP.Utils.formatDisplay(res.breakdown.rangeStart)} - ${APP.Utils.formatDisplay(res.breakdown.rangeEnd)}</p>
-                        </div>
-                        <div class="p-5 bg-emerald-50 rounded-2xl border border-emerald-100">
-                            <p class="text-[10px] font-bold text-emerald-500 uppercase">Dias incluidos</p>
-                            <p class="text-3xl font-black text-emerald-900 mt-2">${res.breakdown.includedDays}</p>
-                        </div>
-                        <div class="p-5 bg-rose-50 rounded-2xl border border-rose-100">
-                            <p class="text-[10px] font-bold text-rose-500 uppercase">Dias excluidos</p>
-                            <p class="text-3xl font-black text-rose-900 mt-2">${res.breakdown.excludedDays}</p>
-                        </div>
-                        <div class="p-5 bg-indigo-50 rounded-2xl border border-indigo-100">
-                            <p class="text-[10px] font-bold text-indigo-400 uppercase">Resultado actual</p>
-                            <p class="text-3xl font-black text-indigo-900 mt-2">${res.working.days} dias</p>
-                        </div>
-                    </div>
-
-                    <div class="p-6 bg-indigo-50 rounded-2xl border border-indigo-100 flex justify-between items-center text-center gap-4">
-                        <div>
-                            <p class="text-[10px] font-bold text-indigo-400 uppercase">Dias laborables</p>
-                            <p class="text-3xl font-black text-indigo-900">${res.workingDays}</p>
-                        </div>
-                        <div class="text-2xl text-indigo-200">x</div>
-                        <div>
-                            <p class="text-[10px] font-bold text-indigo-400 uppercase">Lactancia laborable</p>
-                            <p class="text-3xl font-black text-indigo-900">${res.working.days}</p>
-                        </div>
-                    </div>
-
-                    <div class="grid md:grid-cols-2 xl:grid-cols-4 gap-4">
-                        <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200">
-                            <p class="text-[10px] font-bold text-slate-400 uppercase">Fines de semana excluidos</p>
-                            <p class="text-2xl font-black text-slate-900 mt-2">${res.breakdown.counts.weekend}</p>
-                        </div>
-                        <div class="p-4 bg-red-50 rounded-2xl border border-red-100">
-                            <p class="text-[10px] font-bold text-red-400 uppercase">Festivos nacionales</p>
-                            <p class="text-2xl font-black text-red-900 mt-2">${res.breakdown.counts.national}</p>
-                        </div>
-                        <div class="p-4 bg-purple-50 rounded-2xl border border-purple-100">
-                            <p class="text-[10px] font-bold text-purple-400 uppercase">Festivos locales</p>
-                            <p class="text-2xl font-black text-purple-900 mt-2">${res.breakdown.counts.local}</p>
-                        </div>
-                        <div class="p-4 bg-amber-50 rounded-2xl border border-amber-100">
-                            <p class="text-[10px] font-bold text-amber-500 uppercase">Vacaciones escolares (informativo)</p>
-                            <p class="text-2xl font-black text-amber-900 mt-2">${res.breakdown.counts.school}</p>
-                        </div>
-                    </div>
-
-                    ${res.natural ? `
-                    <div class="p-4 bg-purple-50 rounded-2xl border border-purple-100">
-                        <p class="text-xs font-bold text-purple-900">Opcion 28 dias naturales</p>
-                        <p class="text-[10px] text-purple-600 mt-1">Tambien puedes optar por <span class="font-black">${res.natural.days} dias naturales</span>. Recomendado ahora: <span class="font-black">${res.recommendedMode === 'natural' ? '28 dias naturales' : 'dias laborables'}</span>.</p>
-                    </div>
-                    ` : ''}
-
-                    <div class="grid lg:grid-cols-2 gap-6">
-                        <details class="rounded-2xl border border-slate-200 p-5 bg-white" open>
-                            <summary class="cursor-pointer text-sm font-bold text-slate-900">Dias incluidos en el computo (${res.breakdown.includedDates.length})</summary>
-                            <div class="mt-4 max-h-72 overflow-y-auto pr-2 no-scrollbar text-xs">
-                                ${includedRows || '<p class="text-slate-500">No hay dias incluidos.</p>'}
+                    <div class="p-5 bg-amber-50 rounded-2xl border border-amber-200">
+                        <div class="flex flex-wrap items-end gap-6">
+                            <div class="flex-1 min-w-[200px]">
+                                <label for="lactationStartRef" class="block text-[10px] font-bold text-amber-600 uppercase mb-2">Fecha de referencia (ultimo dia antes de reincorporacion)</label>
+                                <input type="date" id="lactationStartRef" value="${startRefDate}" class="w-full bg-white border border-amber-200 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-900 outline-none focus:ring-2 focus:ring-amber-300 transition-all">
+                                <p class="text-[9px] text-amber-500 mt-2">Puedes cambiar esta fecha si empalmaste permisos, vacaciones, etc. y tu reincorporacion real es mas tarde.</p>
                             </div>
-                        </details>
-
-                        <details class="rounded-2xl border border-slate-200 p-5 bg-white" open>
-                            <summary class="cursor-pointer text-sm font-bold text-slate-900">Dias excluidos y motivo (${res.breakdown.excludedDates.length})</summary>
-                            <div class="mt-4 max-h-72 overflow-y-auto pr-2 no-scrollbar text-xs">
-                                ${excludedRows || '<p class="text-slate-500">No hay dias excluidos.</p>'}
+                            <div class="flex flex-col gap-1 text-[9px] text-slate-500">
+                                ${lastVolDay ? `<span>Fin voluntarias: <strong class="text-slate-700">${APP.Utils.formatDisplay(lastVolDay)}</strong></span>` : ''}
+                                ${lastLeaveDay && lastLeaveDay !== lastVolDay ? `<span>Fin ultimo permiso: <strong class="text-slate-700">${APP.Utils.formatDisplay(lastLeaveDay)}</strong></span>` : ''}
                             </div>
-                        </details>
+                        </div>
                     </div>
 
-                    <p class="text-[11px] text-slate-400">Nota: las vacaciones escolares se muestran solo de forma informativa y no excluyen dias en la modalidad laborable.</p>
+                    <div id="lactationResults">
+                        ${this._buildLactationResults(res, startRefDate)}
+                    </div>
                 </div>
 
                 <div class="mt-8 flex justify-end">
@@ -395,7 +342,115 @@ APP.UI = {
             </div>
         `;
 
+        // Evento de recalculo al cambiar la fecha
+        document.getElementById('lactationStartRef').addEventListener('change', (e) => {
+            const newDate = e.target.value;
+            if (!newDate) return;
+            const newRes = APP.Logic.calculateLactation(newDate, parent.hours, role);
+            document.getElementById('lactationResults').innerHTML = this._buildLactationResults(newRes, newDate);
+        });
+
         modal.classList.remove('hidden');
+    },
+
+    _buildLactationResults(res, refDate) {
+        const includedRows = res.breakdown.includedDates.map((item) => `
+            <div class="flex justify-between gap-4 py-2 border-b border-slate-100 last:border-b-0">
+                <span class="font-medium text-slate-700">${APP.Utils.formatDisplay(item.ds)}</span>
+                <span class="text-slate-500 text-right">${item.reason}</span>
+            </div>
+        `).join('');
+        const excludedRows = res.breakdown.excludedDates.map((item) => `
+            <div class="flex justify-between gap-4 py-2 border-b border-slate-100 last:border-b-0">
+                <span class="font-medium text-slate-700">${APP.Utils.formatDisplay(item.ds)}</span>
+                <span class="text-slate-500 text-right">${item.reasons.join(', ') || 'Excluido'}${item.schoolBreak ? ' · Con vacaciones escolares (informativo)' : ''}</span>
+            </div>
+        `).join('');
+
+        return `
+            <div class="grid md:grid-cols-2 xl:grid-cols-6 gap-4">
+                <div class="p-5 bg-white rounded-2xl border border-slate-200">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase">Fecha de referencia</p>
+                    <p class="text-sm font-bold text-slate-900 mt-2">${APP.Utils.formatDisplay(refDate)}</p>
+                </div>
+                <div class="p-5 bg-white rounded-2xl border border-slate-200">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase">Inicio del computo</p>
+                    <p class="text-sm font-bold text-slate-900 mt-2">${APP.Utils.formatDisplay(res.breakdown.rangeStart)}</p>
+                </div>
+                <div class="p-5 bg-slate-50 rounded-2xl border border-slate-200">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase">Rango analizado</p>
+                    <p class="text-sm font-bold text-slate-900 mt-2">${APP.Utils.formatDisplay(res.breakdown.rangeStart)} - ${APP.Utils.formatDisplay(res.breakdown.rangeEnd)}</p>
+                </div>
+                <div class="p-5 bg-emerald-50 rounded-2xl border border-emerald-100">
+                    <p class="text-[10px] font-bold text-emerald-500 uppercase">Dias incluidos</p>
+                    <p class="text-3xl font-black text-emerald-900 mt-2">${res.breakdown.includedDays}</p>
+                </div>
+                <div class="p-5 bg-rose-50 rounded-2xl border border-rose-100">
+                    <p class="text-[10px] font-bold text-rose-500 uppercase">Dias excluidos</p>
+                    <p class="text-3xl font-black text-rose-900 mt-2">${res.breakdown.excludedDays}</p>
+                </div>
+                <div class="p-5 bg-indigo-50 rounded-2xl border border-indigo-100">
+                    <p class="text-[10px] font-bold text-indigo-400 uppercase">Resultado actual</p>
+                    <p class="text-3xl font-black text-indigo-900 mt-2">${res.working.days} dias</p>
+                </div>
+            </div>
+
+            <div class="p-6 bg-indigo-50 rounded-2xl border border-indigo-100 flex justify-between items-center text-center gap-4 mt-6">
+                <div>
+                    <p class="text-[10px] font-bold text-indigo-400 uppercase">Dias laborables</p>
+                    <p class="text-3xl font-black text-indigo-900">${res.workingDays}</p>
+                </div>
+                <div class="text-2xl text-indigo-200">x</div>
+                <div>
+                    <p class="text-[10px] font-bold text-indigo-400 uppercase">Lactancia laborable</p>
+                    <p class="text-3xl font-black text-indigo-900">${res.working.days}</p>
+                </div>
+            </div>
+
+            <div class="grid md:grid-cols-2 xl:grid-cols-4 gap-4 mt-6">
+                <div class="p-4 bg-slate-50 rounded-2xl border border-slate-200">
+                    <p class="text-[10px] font-bold text-slate-400 uppercase">Fines de semana excluidos</p>
+                    <p class="text-2xl font-black text-slate-900 mt-2">${res.breakdown.counts.weekend}</p>
+                </div>
+                <div class="p-4 bg-red-50 rounded-2xl border border-red-100">
+                    <p class="text-[10px] font-bold text-red-400 uppercase">Festivos nacionales</p>
+                    <p class="text-2xl font-black text-red-900 mt-2">${res.breakdown.counts.national}</p>
+                </div>
+                <div class="p-4 bg-purple-50 rounded-2xl border border-purple-100">
+                    <p class="text-[10px] font-bold text-purple-400 uppercase">Festivos locales</p>
+                    <p class="text-2xl font-black text-purple-900 mt-2">${res.breakdown.counts.local}</p>
+                </div>
+                <div class="p-4 bg-amber-50 rounded-2xl border border-amber-100">
+                    <p class="text-[10px] font-bold text-amber-500 uppercase">Vacaciones escolares (informativo)</p>
+                    <p class="text-2xl font-black text-amber-900 mt-2">${res.breakdown.counts.school}</p>
+                </div>
+            </div>
+
+            ${res.natural ? `
+            <div class="p-4 bg-purple-50 rounded-2xl border border-purple-100 mt-6">
+                <p class="text-xs font-bold text-purple-900">Opcion 28 dias naturales</p>
+                <p class="text-[10px] text-purple-600 mt-1">Tambien puedes optar por <span class="font-black">${res.natural.days} dias naturales</span>. Recomendado ahora: <span class="font-black">${res.recommendedMode === 'natural' ? '28 dias naturales' : 'dias laborables'}</span>.</p>
+            </div>
+            ` : ''}
+
+            <div class="grid lg:grid-cols-2 gap-6 mt-6">
+                <details class="rounded-2xl border border-slate-200 p-5 bg-white" open>
+                    <summary class="cursor-pointer text-sm font-bold text-slate-900">Dias incluidos en el computo (${res.breakdown.includedDates.length})</summary>
+                    <div class="mt-4 max-h-72 overflow-y-auto pr-2 no-scrollbar text-xs">
+                        ${includedRows || '<p class="text-slate-500">No hay dias incluidos.</p>'}
+                    </div>
+                </details>
+
+                <details class="rounded-2xl border border-slate-200 p-5 bg-white" open>
+                    <summary class="cursor-pointer text-sm font-bold text-slate-900">Dias excluidos y motivo (${res.breakdown.excludedDates.length})</summary>
+                    <div class="mt-4 max-h-72 overflow-y-auto pr-2 no-scrollbar text-xs">
+                        ${excludedRows || '<p class="text-slate-500">No hay dias excluidos.</p>'}
+                    </div>
+                </details>
+            </div>
+
+            <p class="text-[11px] text-slate-400 mt-6">Nota: las vacaciones escolares se muestran solo de forma informativa y no excluyen dias en la modalidad laborable.</p>
+        `;
     },
 
     updateDashboard() {
@@ -445,9 +500,11 @@ APP.UI = {
             this.elements.metrics.weeks.innerText = '0 sem cubiertas';
         }
 
-        this.elements.metrics.mom.innerText = metrics.mReturn ? APP.Utils.formatDisplay(APP.Utils.addDays(metrics.mReturn, 1)) : '--';
+        const momReturn = APP.Logic.getReturnDate('mom');
+        this.elements.metrics.mom.innerText = momReturn ? APP.Utils.formatDisplay(momReturn) : '--';
         if (!isMono) {
-            this.elements.metrics.dad.innerText = metrics.fReturn ? APP.Utils.formatDisplay(APP.Utils.addDays(metrics.fReturn, 1)) : '--';
+            const dadReturn = APP.Logic.getReturnDate('dad');
+            this.elements.metrics.dad.innerText = dadReturn ? APP.Utils.formatDisplay(dadReturn) : '--';
         }
         this.elements.metrics.overlap.innerText = `${metrics.counts.overlap} dias solapados`;
 
@@ -487,8 +544,10 @@ APP.UI = {
         const birthStr = APP.Utils.formatDisplay(APP.State.birthDate);
         const coverageStr = metrics.lastDate ? APP.Utils.formatDisplay(metrics.lastDate) : '--';
         
-        const mReturn = metrics.mReturn ? APP.Utils.formatDisplay(APP.Utils.addDays(metrics.mReturn, 1)) : '--';
-        const fReturn = metrics.fReturn ? APP.Utils.formatDisplay(APP.Utils.addDays(metrics.fReturn, 1)) : '--';
+        const momReturnDate = APP.Logic.getReturnDate('mom');
+        const dadReturnDate = APP.Logic.getReturnDate('dad');
+        const mReturn = momReturnDate ? APP.Utils.formatDisplay(momReturnDate) : '--';
+        const fReturn = dadReturnDate ? APP.Utils.formatDisplay(dadReturnDate) : '--';
 
         const subject = `Resumen Planificacion Familiar - Nacimiento ${birthStr}`;
         let body = `Hola,\n\nAquí tienes el resumen de la planificación familiar:\n\n`;
