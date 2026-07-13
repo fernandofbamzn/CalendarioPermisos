@@ -51,17 +51,89 @@ APP.Events = {
     },
 
     setTool(tool) {
-        // Si es herramienta 'other', pedir tipo de permiso al usuario
+        // Si es herramienta 'other', abrir mini-modal para nombre + color
         if (tool === 'mom_other' || tool === 'dad_other') {
-            const label = prompt('Indica el tipo de permiso (ej: Matrimonio, Mudanza, Excedencia, Asuntos propios...):');
-            if (!label || !label.trim()) return;
-            APP.State.currentOtherLabel = label.trim();
+            this._openOtherModal(tool);
+            return;
         }
 
+        this._activateTool(tool);
+    },
+
+    // Mini-modal para elegir nombre y color del permiso "Otros"
+    _openOtherModal(tool) {
+        const modal = document.getElementById('wizardModal');
+        const container = modal.querySelector('div');
+        container.className = 'bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-fade';
+
+        container.innerHTML = `
+            <div class="p-8">
+                <h3 class="text-xl font-bold text-slate-900 mb-2">Nuevo permiso</h3>
+                <p class="text-slate-500 text-sm mb-6">Indica el tipo de permiso y elige un color para identificarlo.</p>
+
+                <div class="space-y-4">
+                    <div>
+                        <label for="otherPermitName" class="block text-[10px] font-bold text-slate-500 uppercase mb-2">Nombre del permiso</label>
+                        <input type="text" id="otherPermitName" placeholder="Ej: Matrimonio, Mudanza, Excedencia..."
+                            class="w-full bg-white border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-900 outline-none focus:ring-2 focus:ring-rose-300 transition-all">
+                    </div>
+                    <div>
+                        <label for="otherPermitColor" class="block text-[10px] font-bold text-slate-500 uppercase mb-2">Color</label>
+                        <div class="flex items-center gap-3">
+                            <input type="color" id="otherPermitColor" value="#f43f5e"
+                                class="w-10 h-10 rounded-xl border border-slate-200 cursor-pointer p-0.5">
+                            <span id="otherPermitColorHex" class="text-xs font-mono text-slate-400">#f43f5e</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-8 flex justify-end gap-3">
+                    <button id="otherPermitCancel" class="px-6 py-2.5 bg-slate-100 text-slate-700 rounded-2xl text-sm font-bold transition-all hover:bg-slate-200">Cancelar</button>
+                    <button id="otherPermitAccept" class="px-6 py-2.5 bg-rose-500 text-white rounded-2xl text-sm font-bold shadow-lg shadow-rose-100 transition-all hover:bg-rose-600">Aceptar</button>
+                </div>
+            </div>
+        `;
+
+        // Actualizar hex al cambiar color
+        const colorInput = document.getElementById('otherPermitColor');
+        const hexLabel = document.getElementById('otherPermitColorHex');
+        colorInput.addEventListener('input', () => {
+            hexLabel.textContent = colorInput.value;
+        });
+
+        // Cancelar
+        document.getElementById('otherPermitCancel').addEventListener('click', () => {
+            modal.classList.add('hidden');
+        });
+
+        // Aceptar
+        document.getElementById('otherPermitAccept').addEventListener('click', () => {
+            const name = document.getElementById('otherPermitName').value.trim();
+            if (!name) {
+                document.getElementById('otherPermitName').focus();
+                return;
+            }
+            APP.State.currentOtherLabel = name;
+            APP.State.currentOtherColor = colorInput.value;
+            modal.classList.add('hidden');
+            this._activateTool(tool);
+        });
+
+        // Focus en el input de nombre y Enter para aceptar
+        modal.classList.remove('hidden');
+        setTimeout(() => {
+            document.getElementById('otherPermitName').focus();
+            document.getElementById('otherPermitName').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') document.getElementById('otherPermitAccept').click();
+            });
+        }, 50);
+    },
+
+    _activateTool(tool) {
         APP.State.currentTool = APP.State.normalizeCurrentTool(tool);
 
         document.querySelectorAll('.tool-btn').forEach((button) => {
-            button.classList.remove('active', 'ring-2', 'ring-offset-2', 'shadow-lg', 'ring-purple-600', 'ring-blue-600', 'ring-teal-500', 'ring-slate-300');
+            button.classList.remove('active', 'ring-2', 'ring-offset-2', 'shadow-lg', 'ring-purple-600', 'ring-blue-600', 'ring-rose-500', 'ring-slate-300');
             button.classList.add('shadow-sm');
         });
 
@@ -75,6 +147,7 @@ APP.Events = {
 
         APP.State.save();
     },
+
 
     handleDateClick(ds) {
         const tool = APP.State.currentTool;
@@ -95,7 +168,7 @@ APP.Events = {
         APP.UI.elements.stats.classList.remove('hidden');
         APP.UI.elements.grid.classList.remove('hidden');
 
-        this.setTool(APP.State.currentTool);
+        this._activateTool(APP.State.currentTool);
         APP.UI.syncParentLabels();
         APP.UI.renderCalendar();
         APP.UI.updateDashboard();
@@ -209,16 +282,24 @@ APP.Events = {
             const type = t.split('_')[1];
             if (turnOn) {
                 d[role] = type;
-                // Si es 'other', guardar la etiqueta descriptiva
+                // Si es 'other', guardar la etiqueta descriptiva y el color
                 if (type === 'other' && APP.State.currentOtherLabel) {
                     if (!d.otherLabels) d.otherLabels = {};
                     d.otherLabels[role] = APP.State.currentOtherLabel;
+                    if (APP.State.currentOtherColor) {
+                        if (!d.otherColors) d.otherColors = {};
+                        d.otherColors[role] = APP.State.currentOtherColor;
+                    }
                 }
             } else if (d[role] === type) {
                 delete d[role];
                 if (d.otherLabels) {
                     delete d.otherLabels[role];
                     if (Object.keys(d.otherLabels).length === 0) delete d.otherLabels;
+                }
+                if (d.otherColors) {
+                    delete d.otherColors[role];
+                    if (Object.keys(d.otherColors).length === 0) delete d.otherColors;
                 }
             }
         }
@@ -227,7 +308,7 @@ APP.Events = {
         if (holidays.length > 0) d.holidays = holidays;
         else delete d.holidays;
 
-        if (!d.m && !d.f && !d.holidays && !d.otherLabels) delete APP.State.data[ds];
+        if (!d.m && !d.f && !d.holidays && !d.otherLabels && !d.otherColors) delete APP.State.data[ds];
 
         const cell = document.getElementById(`c-${ds}`);
         if (cell) APP.UI.applyCellStyles(cell, ds);

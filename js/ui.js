@@ -259,13 +259,33 @@ APP.UI = {
             if (m === 'flex') this.appendLayer(el, 'absolute inset-x-0 bottom-0 h-1.5 bg-amber-500 rounded-b-lg');
             if (m === 'vac') this.appendLayer(el, 'absolute inset-x-0 bottom-0 h-1.5 bg-purple-400 rounded-b-lg opacity-40');
             if (m === 'lac') this.appendLayer(el, 'absolute inset-x-0 bottom-0 h-1.5 bg-green-500 rounded-b-lg');
-            if (m === 'other') this.appendLayer(el, 'absolute inset-x-0 bottom-0 h-1.5 bg-teal-500 rounded-b-lg');
+            if (m === 'other') {
+                const customColor = d.otherColors?.m;
+                if (customColor) {
+                    const layer = document.createElement('div');
+                    layer.className = 'absolute inset-x-0 bottom-0 h-1.5 rounded-b-lg';
+                    layer.style.backgroundColor = customColor;
+                    el.appendChild(layer);
+                } else {
+                    this.appendLayer(el, 'absolute inset-x-0 bottom-0 h-1.5 bg-rose-500 rounded-b-lg');
+                }
+            }
 
             if (f === 'vol' || f === 'ex') this.appendLayer(el, 'absolute inset-x-0 top-0 h-1.5 bg-blue-600 rounded-t-lg');
             if (f === 'flex') this.appendLayer(el, 'absolute inset-x-0 top-0 h-1.5 bg-amber-500 rounded-t-lg');
             if (f === 'vac') this.appendLayer(el, 'absolute inset-x-0 top-0 h-1.5 bg-cyan-400 rounded-t-lg opacity-40');
             if (f === 'lac') this.appendLayer(el, 'absolute inset-x-0 top-0 h-1.5 bg-green-500 rounded-t-lg');
-            if (f === 'other') this.appendLayer(el, 'absolute inset-x-0 top-0 h-1.5 bg-teal-500 rounded-t-lg');
+            if (f === 'other') {
+                const customColor = d.otherColors?.f;
+                if (customColor) {
+                    const layer = document.createElement('div');
+                    layer.className = 'absolute inset-x-0 top-0 h-1.5 rounded-t-lg';
+                    layer.style.backgroundColor = customColor;
+                    el.appendChild(layer);
+                } else {
+                    this.appendLayer(el, 'absolute inset-x-0 top-0 h-1.5 bg-rose-500 rounded-t-lg');
+                }
+            }
         }
 
         this.setCellTooltip(el, ds);

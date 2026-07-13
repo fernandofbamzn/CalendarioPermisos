@@ -150,7 +150,32 @@ APP.PDF = {
         return sheet;
     },
 
+    // Recopila los tipos unicos de 'Otros' usados en el calendario (nombre + color)
+    collectOtherTypes() {
+        const seen = new Map(); // key = label, value = color
+        Object.values(APP.State.data).forEach((day) => {
+            if (!day) return;
+            ['m', 'f'].forEach((role) => {
+                if (day[role] === 'other') {
+                    const label = day.otherLabels?.[role] || 'Otro permiso';
+                    const color = day.otherColors?.[role] || '#f43f5e';
+                    if (!seen.has(label)) seen.set(label, color);
+                }
+            });
+        });
+        return seen;
+    },
+
     buildLegendBlockHtml() {
+        // Generar entradas dinamicas de 'Otros'
+        const otherTypes = this.collectOtherTypes();
+        let otherLegendHtml = '';
+        if (otherTypes.size > 0) {
+            otherTypes.forEach((color, label) => {
+                otherLegendHtml += `<li class="print-legend-inline-item"><span class="print-swatch" style="background:${color};border-radius:4px;"></span><span>${label}</span></li>`;
+            });
+        }
+
         return `
             <div class="print-legend-header">
                 <div>
@@ -169,7 +194,7 @@ APP.PDF = {
                 <li class="print-legend-inline-item"><span class="print-swatch print-band-bottom print-band-lactation"></span><span>Lactancia</span></li>
                 <li class="print-legend-inline-item"><span class="print-swatch print-band-bottom print-band-vac-bottom"></span><span>Vacaciones madre</span></li>
                 <li class="print-legend-inline-item"><span class="print-swatch print-band-top print-band-vac-top"></span><span>Vacaciones padre</span></li>
-                <li class="print-legend-inline-item"><span class="print-swatch" style="background:#14b8a6;border-radius:4px;"></span><span>Otros permisos</span></li>
+                ${otherLegendHtml}
                 <li class="print-legend-inline-item"><span class="print-swatch print-swatch--nat"></span><span>Festivo nacional/autonomico</span></li>
                 <li class="print-legend-inline-item"><span class="print-swatch print-swatch--mom-local"></span><span>Festivo local madre</span></li>
                 <li class="print-legend-inline-item"><span class="print-swatch print-swatch--dad-local"></span><span>Festivo local padre</span></li>
